@@ -114,9 +114,9 @@ class ChatService {
                 roomId: roomId,
                 isLoggedIn: true
             });
-            
+            // TODO: update room info is broken
             // Update room info (matches React Native updateRoomInfo)
-            await this.updateRoomInfo(roomId);
+            // await this.updateRoomInfo(roomId);
 
             this.eventEmitter.emit('chat:initiated', { user: userData, roomId });
             
@@ -130,6 +130,7 @@ class ChatService {
     }
 
     /**
+     * TODO: update room info is broken
      * Update room info with messages (matches React Native useUpdateRoomInfo)
      * @param {number} roomId - Room ID to load
      * @returns {Promise<[Object|null, Array]>} Returns [room, messages]
