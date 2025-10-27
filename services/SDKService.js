@@ -100,6 +100,23 @@ class SDKService {
         return user;
     }
 
+    async setUserWithIdentityToken(identityToken) {
+        if (!this.sdk) throw new Error('SDK not initialized');
+        
+        const user = await this.sdk.setUserWithIdentityToken(identityToken);
+        console.log('[SDKService] User set with identity token:', user);
+
+        if (this.sdk.HTTPAdapter) {
+            this.sdk.HTTPAdapter.token = identityToken;
+        }
+
+        return user;
+    }
+
+    getUserToken() {
+        return this.sdk?.token || null;
+    }
+
     async getNonce() {
         if (!this.sdk) throw new Error('SDK not initialized');
         const response = await this.sdk.getNonce();
