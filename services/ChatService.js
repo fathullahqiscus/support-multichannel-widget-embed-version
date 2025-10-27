@@ -15,19 +15,60 @@ class ChatService {
         try {
             console.log('[ChatService] Initiating chat...');
             
-            // Check if we can use existing session (matches React Native flow)
-            const existingRoom = await this.tryRestoreSession(appId);
-            console.log('[ChatService] Existing room:', existingRoom);
-            if (existingRoom) {
-                // Return existing user if session restored
-                return existingRoom.user;
+            // Load session from storage first (matches React Native AsyncStorage.getItem)
+            const session = this.storageService.getSession(appId);
+            console.log('[ChatService] Session from storage:', session);
+            
+            // Restore session to state if exists
+            if (session && session.user && session.roomId) {
+                this.stateManager.setState({
+                    currentUser: session.user,
+                    roomId: session.roomId,
+                    isLoggedIn: true
+                });
+                await this.sdkService.setUserWithToken(session.user);
+                console.log('[ChatService] Session restored to state', this.stateManager.getState());
+            }
+            
+            // Check if we have existing session (matches React Native flow)
+            const currentUser = this.stateManager.get('currentUser');
+            const lastRoomId = this.stateManager.get('roomId');
+
+            if (currentUser != null && lastRoomId != null) {
+                console.log('[ChatService] Found existing session, checking room status...');
+                // TODO: implement room status check
+                // // Update room info (matches React Native updateRoomInfo)
+                // const [room, messages] = await this.sdkService.getRoom(lastRoomId);
+
+                // // Check if room is resolved
+                // const lastMessageText1 = room?.lastMessage?.text;
+                // const lastMessageText2 = messages[messages.length - 1]?.text;
+
+                // const resolvedText = 'admin marked this conversation as resolved';
+                // const lastMessageResolved = [lastMessageText1, lastMessageText2]
+                //     .map((it) => it?.toLowerCase())
+                //     .some((it) => it?.includes(resolvedText) === true);
+                // const roomExtrasResolved = room?.extras?.is_resolved === true;
+
+                // const isResolved = roomExtrasResolved || lastMessageResolved;
+                // const isSessional = isResolved ? await this.shouldCreateNewSession(appId) : false;
+
+                // console.log(`[ChatService] Room are resolved(${isResolved}) and sessional(${isSessional})`);
+                
+                // if (!isSessional) {
+                //     console.log('[ChatService] Room are not sessional, using existing room');
+                //     return currentUser;
+                // }
+                
+
+                return currentUser;
             }
 
-            // Get nonce from SDK
+            // Get nonce from SDK (matches React Native getJWTNonce)
             const nonce = await this.sdkService.getNonce();
             console.log('[ChatService] Nonce:', nonce);
             
-            // Prepare API request with all parameters (matches React Native)
+            // Prepare API request (matches React Native)
             const data = {
                 app_id: appId,
                 user_id: userConfig.userId,
@@ -48,37 +89,39 @@ class ChatService {
             const { identity_token, customer_room } = result.data;
             console.log('[ChatService] Initiate chat result:', result);
             
-            // Verify identity token first
+            // Parse room ID
+            const roomId = Number(customer_room.room_id);
+
+            // Verify identity token and get user data
             const userData = await this.sdkService.verifyIdentityToken(identity_token);
-            console.log('[ChatService] Identity token verified:', userData);
-            // Set user with verified user data
+            console.log('[ChatService] User data:', userData);
+            
+            // Set user with token (matches React Native setUserWithIdentityToken)
             const user = await this.sdkService.setUserWithToken(userData);
             console.log('[ChatService] User set:', user);
             
             // Get user token from SDK
             const userToken = this.sdkService.getUserToken();
             
-            // Parse room ID
-            const roomId = Number(customer_room.room_id);
-            
             // Save session to storage (matches React Native AsyncStorage.multiSet)
+            // Save userData (from verifyIdentityToken) to match what we restore
             this.storageService.saveSession(appId, userData, userToken, roomId);
             console.log('[ChatService] Session saved');
             
-            // Update state
+            // Update state (matches React Native atom setters)
             this.stateManager.setState({
-                currentUser: user,
+                currentUser: userData,
                 roomId: roomId,
                 isLoggedIn: true
             });
             
-            // Load room and messages
-            await this.loadRoom(roomId);
+            // Update room info (matches React Native updateRoomInfo)
+            await this.updateRoomInfo(roomId);
 
-            this.eventEmitter.emit('chat:initiated', { user, roomId });
+            this.eventEmitter.emit('chat:initiated', { user: userData, roomId });
             
             // Return user (matches React Native return value)
-            return user;
+            return userData;
         } catch (error) {
             console.error('[ChatService] Initiate chat error:', error);
             this.eventEmitter.emit('chat:error', error);
@@ -99,20 +142,22 @@ class ChatService {
         }
 
         // Get chat room with messages (matches React Native getChatRoomWithMessages)
-        let [room, messages] = await this.sdkService.getChatRoomWithMessages(roomId);
+        const roomObj = await this.sdkService.getRoom(roomId);
+        let room = roomObj;
+        let messages = roomObj.comments || [];
         
         // Get previous messages (matches React Native getPreviousMessagesById)
-        await this.sdkService.getPreviousMessagesById(room.id, 20, messages[0]?.id)
+        await this.sdkService.getPreviousMessagesById(roomId, 20, messages[0]?.id)
             .then((msgs) => {
                 messages.push(...msgs);
             });
 
-        // Update room in state
+        // Update room in state (matches React Native set(roomAtom))
         this.stateManager.setState({
             room: { ...this.stateManager.get('room'), ...room }
         });
 
-        // Update messages in state
+        // Update messages in state (matches React Native set(messagesAtom))
         this.stateManager.setMessages(messages);
 
         // Build subtitle from participants
@@ -130,7 +175,7 @@ class ChatService {
             }
         });
 
-        // Update subtitle and avatar in state
+        // Update subtitle and avatar in state (matches React Native set(subtitleAtom) and set(avatarAtom))
         this.stateManager.setState({
             subtitle: subtitle.join(', '),
             avatar: avatar

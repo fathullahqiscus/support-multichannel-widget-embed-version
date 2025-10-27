@@ -90,14 +90,18 @@ class SDKService {
     async setUserWithToken(userData) {
         if (!this.sdk) throw new Error('SDK not initialized');
         
-        const user = await this.sdk.setUserWithIdentityToken(userData);
-        console.log('[SDKService] User set with identity token:', user);
-
+        // Set the user with the identity token
+        const result = await this.sdk.setUserWithIdentityToken(userData);
+        
+        // Ensure token is properly set in all required places
         if (this.sdk.HTTPAdapter) {
-            this.sdk.HTTPAdapter.token = userData.identity_token || userData;
+            this.sdk.HTTPAdapter.token = userData.user.token;
+            this.sdk.token = userData.user.token;
+            console.log('[SDKService] User token set:', this.sdk.token);
         }
-
-        return user;
+        
+        this.eventEmitter.emit('sdk:userSet', userData);
+        return result;
     }
 
      getUserToken() {
@@ -128,29 +132,24 @@ class SDKService {
         return await this.sdk.loadMore(lastMessageId);
     }
 
-    getRoom(roomId) {
-        if (!this.sdk) return null;
-        const room = this.sdk.getRoomById(roomId);
-        console.log('[SDKService] Getting room:', roomId, room ? 'found' : 'not found');
-        return room;
-    }
-
     /**
      * Get chat room with messages (matches React Native getChatRoomWithMessages)
      * @param {number} roomId - Room ID
-     * @returns {Promise<Object>} Returns room object
+     * @returns {Promise<Object>} Returns room object with comments
      */
-    async getChatRoomWithMessages(roomId) {
+    async getRoom(roomId) {
         if (!this.sdk) throw new Error('SDK not initialized');
+        console.log('[SDKService] user data:', this.getUserData());
+        
+        if(!this.sdk.HTTPAdapter || !this.sdk.HTTPAdapter.token) throw new Error('User not logged in');
         
         console.log('[SDKService] Getting chat room with messages:', roomId);
         
-        // Get room and messages from SDK
-        const roomObj = await this.sdk.getChatRoomWithMessages(roomId);
+        // Use chatTarget to load room (this properly initializes the room)
+        const room = await this.sdk.getRoomById(roomId);
+        console.log('[SDKService] Room loaded with', room.comments?.length || 0, 'messages');
         
-        console.log('[SDKService] Room loaded with', roomObj.comments.length, 'messages');
-        
-        return roomObj;
+        return room;
     }
 
     async getPreviousMessagesById(roomId, limit = 20, lastMessageId) {

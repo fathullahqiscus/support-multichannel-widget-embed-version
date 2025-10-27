@@ -329,7 +329,7 @@ class QiscusMultichannelWidget {
     renderMessages() {
         const messages = this.stateManager.get('messagesList');
         const currentUser = this.stateManager.get('currentUser');
-        this.uiService.renderMessages(messages, currentUser?.email);
+        this.uiService.renderMessages(messages, currentUser?.user?.username);
     }
 
     // Getters for accessing state (read-only)
