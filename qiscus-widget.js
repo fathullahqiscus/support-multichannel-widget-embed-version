@@ -261,6 +261,15 @@ class QiscusMultichannelWidget {
         return await this.chatService.loadMoreMessages();
     }
 
+    /**
+     * Update room info with messages (matches React Native useUpdateRoomInfo)
+     * @param {number} roomId - Room ID to load
+     * @returns {Promise<[Object|null, Array]>} Returns [room, messages]
+     */
+    async updateRoomInfo(roomId) {
+        return await this.chatService.updateRoomInfo(roomId);
+    }
+
     clearUser() {
         this.chatService.clearSession();
         this.userConfig = null;

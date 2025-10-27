@@ -135,6 +135,24 @@ class SDKService {
         return room;
     }
 
+    /**
+     * Get chat room with messages (matches React Native getChatRoomWithMessages)
+     * @param {number} roomId - Room ID
+     * @returns {Promise<Object>} Returns room object
+     */
+    async getChatRoomWithMessages(roomId) {
+        if (!this.sdk) throw new Error('SDK not initialized');
+        
+        console.log('[SDKService] Getting chat room with messages:', roomId);
+        
+        // Get room and messages from SDK
+        const roomObj = await this.sdk.getChatRoomWithMessages(roomId);
+        
+        console.log('[SDKService] Room loaded with', roomObj.comments.length, 'messages');
+        
+        return roomObj;
+    }
+
     async getPreviousMessagesById(roomId, limit = 20, lastMessageId) {
         if (!this.sdk) throw new Error('SDK not initialized');
         

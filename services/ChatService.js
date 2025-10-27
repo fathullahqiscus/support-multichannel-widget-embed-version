@@ -86,6 +86,59 @@ class ChatService {
         }
     }
 
+    /**
+     * Update room info with messages (matches React Native useUpdateRoomInfo)
+     * @param {number} roomId - Room ID to load
+     * @returns {Promise<[Object|null, Array]>} Returns [room, messages]
+     */
+    async updateRoomInfo(roomId) {
+        const currentUser = this.stateManager.get('currentUser');
+        
+        if (roomId == null) {
+            return [null, []];
+        }
+
+        // Get chat room with messages (matches React Native getChatRoomWithMessages)
+        let [room, messages] = await this.sdkService.getChatRoomWithMessages(roomId);
+        
+        // Get previous messages (matches React Native getPreviousMessagesById)
+        await this.sdkService.getPreviousMessagesById(room.id, 20, messages[0]?.id)
+            .then((msgs) => {
+                messages.push(...msgs);
+            });
+
+        // Update room in state
+        this.stateManager.setState({
+            room: { ...this.stateManager.get('room'), ...room }
+        });
+
+        // Update messages in state
+        this.stateManager.setMessages(messages);
+
+        // Build subtitle from participants
+        let subtitle = [];
+        let avatar = room.avatarUrl;
+        room.participants?.forEach((participant) => {
+            if (participant.id === currentUser?.id) {
+                subtitle.unshift('You');
+            } else {
+                const type = participant.extras?.type;
+                if (type === 'agent') {
+                    avatar = participant.avatarUrl;
+                }
+                subtitle.push(participant.name);
+            }
+        });
+
+        // Update subtitle and avatar in state
+        this.stateManager.setState({
+            subtitle: subtitle.join(', '),
+            avatar: avatar
+        });
+
+        return [room, messages];
+    }
+
     async tryRestoreSession(appId) {
         const session = this.storageService.getSession(appId);
         console.log('[ChatService] Session:', session);
@@ -101,10 +154,8 @@ class ChatService {
         if (user != null && roomId != null) {
             console.log('[ChatService] Restoring session for room:', roomId);
             
-            // Load room and get messages
-            await this.loadRoom(roomId);
-            const room = this.stateManager.get('room');
-            const messages = this.stateManager.get('messagesList');
+            // Update room info with messages (matches React Native)
+            const [room, messages] = await this.updateRoomInfo(roomId);
             
             // Check if room is resolved - check both last message and room extras
             const lastMessageText1 = room?.last_comment_message;
