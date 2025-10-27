@@ -167,6 +167,7 @@ class QiscusMultichannelWidget {
             userId: params.userId,
             displayName: params.displayName,
             avatarUrl: params.avatarUrl,
+            extras: params.extras || {},
             userProperties: params.userProperties || {}
         };
         console.log('[QiscusWidget] User configured:', this.userConfig.userId);
