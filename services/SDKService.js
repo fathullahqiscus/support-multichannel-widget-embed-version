@@ -130,7 +130,42 @@ class SDKService {
 
     getRoom(roomId) {
         if (!this.sdk) return null;
-        return this.sdk.rooms.find(r => r.id === roomId) || this.sdk.selected;
+        const room = this.sdk.getRoomById(roomId);
+        console.log('[SDKService] Getting room:', roomId, room ? 'found' : 'not found');
+        return room;
+    }
+
+    async getChatRoomWithMessages(roomId) {
+        if (!this.sdk) throw new Error('SDK not initialized');
+        
+        console.log('[SDKService] Getting chat room with messages:', roomId);
+        
+        // Get room and messages from SDK
+        const room = await this.sdk.getRoomById(roomId);
+        const messages = room?.comments || [];
+        
+        console.log('[SDKService] Room loaded with', messages.length, 'messages');
+        
+        return [room, messages];
+    }
+
+    async getPreviousMessagesById(roomId, limit = 20, lastMessageId) {
+        if (!this.sdk) throw new Error('SDK not initialized');
+        
+        console.log('[SDKService] Loading previous messages:', { roomId, limit, lastMessageId });
+        
+        if (!lastMessageId) {
+            return [];
+        }
+        
+        try {
+            const messages = await this.sdk.loadMore(lastMessageId, limit);
+            console.log('[SDKService] Loaded', messages.length, 'previous messages');
+            return messages;
+        } catch (error) {
+            console.error('[SDKService] Failed to load previous messages:', error);
+            return [];
+        }
     }
 
     getUserData() {

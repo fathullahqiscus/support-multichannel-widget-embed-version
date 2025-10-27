@@ -86,6 +86,21 @@ class QiscusMultichannelWidget {
             this.config.callbacks.onLoginSuccess(user);
         });
 
+        this.eventEmitter.on('chat:restored', (data) => {
+            console.log('[QiscusWidget] Session restored:', {
+                userId: data.user?.email || data.user?.id,
+                roomId: data.roomId,
+                messagesCount: data.messages?.length || 0
+            });
+            
+            // Render restored messages
+            this.renderMessages();
+            
+            // Notify callback
+            this.config.callbacks.onLoginSuccess(data.user);
+            this.config.callbacks.onRoomChanged(data.room);
+        });
+
         this.eventEmitter.on('chat:error', (error) => {
             this.config.callbacks.onLoginError(error);
         });
