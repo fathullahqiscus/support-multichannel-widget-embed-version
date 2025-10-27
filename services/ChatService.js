@@ -14,27 +14,32 @@ class ChatService {
     async initiateChat(appId, channelId, userConfig) {
         try {
             console.log('[ChatService] Initiating chat...');
-            // Check if we can use existing session
+            
+            // Check if we can use existing session (matches React Native flow)
             const existingRoom = await this.tryRestoreSession(appId);
             console.log('[ChatService] Existing room:', existingRoom);
             if (existingRoom) {
-                return existingRoom;
+                // Return existing user if session restored
+                return existingRoom.user;
             }
 
-            // Get nonce
+            // Get nonce from SDK
             const nonce = await this.sdkService.getNonce();
             console.log('[ChatService] Nonce:', nonce);
-            // Prepare API request
+            
+            // Prepare API request with all parameters (matches React Native)
             const data = {
                 app_id: appId,
                 user_id: userConfig.userId,
                 name: userConfig.displayName,
                 avatar: userConfig.avatarUrl,
-                user_properties: userConfig.userProperties,
+                sdk_user_extras: userConfig.extras || {},
+                user_properties: userConfig.userProperties || {},
                 nonce: nonce
             };
 
-            if (channelId) {
+            // Add optional channel_id
+            if (channelId != null) {
                 data.channel_id = channelId;
             }
 
@@ -49,22 +54,31 @@ class ChatService {
             // Set user with verified user data
             const user = await this.sdkService.setUserWithToken(userData);
             console.log('[ChatService] User set:', user);
+            
+            // Get user token from SDK
+            const userToken = this.sdkService.getUserToken();
+            
+            // Parse room ID
+            const roomId = Number(customer_room.room_id);
+            
+            // Save session to storage (matches React Native AsyncStorage.multiSet)
+            this.storageService.saveSession(appId, userData, userToken, roomId);
+            console.log('[ChatService] Session saved');
+            
             // Update state
-            const roomId = parseInt(customer_room.room_id, 10);
             this.stateManager.setState({
                 currentUser: user,
                 roomId: roomId,
                 isLoggedIn: true
             });
-            console.log('[ChatService] State updated:', this.stateManager.get('state'));
-            // Save session
-            this.storageService.saveSession(appId, user, identity_token, roomId);
-            console.log('[ChatService] Session saved:', this.storageService.getSession(appId));
-            // Load room
+            
+            // Load room and messages
             await this.loadRoom(roomId);
 
             this.eventEmitter.emit('chat:initiated', { user, roomId });
-            return { user, roomId };
+            
+            // Return user (matches React Native return value)
+            return user;
         } catch (error) {
             console.error('[ChatService] Initiate chat error:', error);
             this.eventEmitter.emit('chat:error', error);
@@ -75,35 +89,56 @@ class ChatService {
     async tryRestoreSession(appId) {
         const session = this.storageService.getSession(appId);
         console.log('[ChatService] Session:', session);
+        
+        // If no session exists, return null to create new session
         if (!session) return null;
 
         const { user, roomId } = session;
         console.log('[ChatService] User:', user);
         console.log('[ChatService] Room ID:', roomId);
         
-        // Check if room is resolved
-        if (roomId) {
+        // If we have both user and roomId, check if we can restore
+        if (user != null && roomId != null) {
             console.log('[ChatService] Restoring session for room:', roomId);
+            
+            // Load room and get messages
             await this.loadRoom(roomId);
-            const isResolved = this.checkIfRoomResolved();
+            const room = this.stateManager.get('room');
+            const messages = this.stateManager.get('messagesList');
             
-            if (isResolved) {
-                // Check if app is sessional
-                const shouldCreateNewSession = await this.shouldCreateNewSession(appId);
-                if (shouldCreateNewSession) {
-                    console.log('[ChatService] Room resolved and app is sessional - creating new session');
-                    return null; // Force new session creation
-                }
-            }
+            // Check if room is resolved - check both last message and room extras
+            const lastMessageText1 = room?.last_comment_message;
+            const lastMessageText2 = messages[messages.length - 1]?.message;
             
-            if (!isResolved) {
+            const resolvedText = 'admin marked this conversation as resolved';
+            const lastMessageResolved = [lastMessageText1, lastMessageText2]
+                .map((it) => it?.toLowerCase())
+                .some((it) => it?.includes(resolvedText) === true);
+            const roomExtrasResolved = room?.extras?.is_resolved === true;
+            
+            const isResolved = roomExtrasResolved || lastMessageResolved;
+            console.log('[ChatService] Room is resolved:', isResolved);
+            
+            // Only check session status if room is resolved
+            const isSessional = isResolved ? await this.shouldCreateNewSession(appId) : false;
+            
+            console.log(`[ChatService] Room are resolved(${isResolved}) and sessional(${isSessional})`);
+            
+            // If not sessional, use existing room
+            if (!isSessional) {
+                console.log('[ChatService] Room are not sessional, using existing room');
                 this.stateManager.setState({
                     currentUser: user,
                     roomId: roomId,
                     isLoggedIn: true
                 });
+                this.sdkService.setUserWithToken(user);
                 return { user, roomId };
             }
+            
+            // If sessional, return null to create new session
+            console.log('[ChatService] Room resolved and app is sessional - creating new session');
+            return null;
         }
 
         return null;

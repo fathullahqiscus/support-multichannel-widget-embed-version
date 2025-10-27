@@ -143,22 +143,73 @@ class QiscusMultichannelWidget {
     }
 
     async restoreSession() {
-        const session = this.storageService.getSession(this.config.appId);
-        if (!session) return;
-
-        const { user, roomId } = session;
+        // Get stored session data (matches React Native AsyncStorage.getItem)
+        const lastAppId = this.storageService.getItem('lastAppId');
+        const lastUserDataStr = this.storageService.getItem('lastUserData');
+        const lastUserData = lastUserDataStr != null ? JSON.parse(lastUserDataStr) : undefined;
+        const lastUserToken = this.storageService.getItem('lastUserToken');
+        const lastRoomIdStr = this.storageService.getItem('lastRoomId');
         
-        this.stateManager.setState({
-            currentUser: user,
-            isLoggedIn: true
+        console.log('[QiscusWidget] Restoring session:', {
+            lastAppId,
+            lastUserData: lastUserData?.id,
+            hasToken: !!lastUserToken,
+            lastRoomId: lastRoomIdStr
         });
 
-        if (roomId) {
-            console.log('[QiscusWidget] Restoring session for room:', roomId);
-            await this.chatService.loadRoom(roomId);
+        // If we have user data and token, restore the session
+        if (lastUserData != null && lastUserToken != null) {
+            // Set user config (matches React Native setUser)
+            this.setUser({
+                userId: lastUserData.id || lastUserData.email,
+                displayName: lastUserData.name,
+                avatarUrl: lastUserData.avatarUrl || lastUserData.avatar_url,
+                extras: lastUserData.extras || {},
+                userProperties: lastUserData.extras || {}
+            });
+            
+            // Set current user in state
+            this.stateManager.setState({
+                currentUser: lastUserData,
+                isLoggedIn: true
+            });
+            
+            // Internal SDK setup - restore user session in SDK
+            // This matches React Native's internal qiscus.storage calls
+            if (this.sdkService.sdk) {
+                try {
+                    // @ts-ignore - Internal SDK storage access
+                    if (this.sdkService.sdk.storage) {
+                        this.sdkService.sdk.storage.setAppId(lastAppId);
+                        this.sdkService.sdk.storage.setCurrentUser(lastUserData);
+                        this.sdkService.sdk.storage.setToken(lastUserToken);
+                    }
+                    
+                    // Set token in HTTPAdapter
+                    if (this.sdkService.sdk.HTTPAdapter) {
+                        this.sdkService.sdk.HTTPAdapter.token = lastUserToken;
+                    }
+                    
+                    // Set userData and token directly
+                    this.sdkService.sdk.userData = lastUserData;
+                    this.sdkService.sdk.token = lastUserToken;
+                    this.sdkService.sdk.isLogin = true;
+                    
+                    console.log('[QiscusWidget] SDK session restored');
+                } catch (error) {
+                    console.error('[QiscusWidget] Failed to restore SDK session:', error);
+                }
+            }
+        }
+        
+        // Restore room ID if exists
+        if (lastRoomIdStr != null) {
+            const roomId = parseInt(lastRoomIdStr, 10);
+            this.stateManager.setState({ roomId });
+            console.log('[QiscusWidget] Room ID restored:', roomId);
         }
 
-        console.log('[QiscusWidget] Session restored');
+        console.log('[QiscusWidget] Session restoration complete');
     }
 
     // Public API Methods

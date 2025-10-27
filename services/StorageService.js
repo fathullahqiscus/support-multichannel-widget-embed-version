@@ -15,10 +15,47 @@ class StorageService {
         };
     }
 
+    /**
+     * Get item from storage (matches AsyncStorage.getItem)
+     * @param {string} key - Storage key name (without prefix)
+     * @returns {string|null} Stored value or null
+     */
+    getItem(key) {
+        try {
+            const storageKey = this.KEYS[key];
+            if (!storageKey) {
+                console.warn(`[StorageService] Unknown key: ${key}`);
+                return null;
+            }
+            return this.storage.getItem(storageKey);
+        } catch (error) {
+            console.error('[StorageService] Get item error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set item in storage (matches AsyncStorage.setItem)
+     * @param {string} key - Storage key name (without prefix)
+     * @param {string} value - Value to store
+     */
+    setItem(key, value) {
+        try {
+            const storageKey = this.KEYS[key];
+            if (!storageKey) {
+                console.warn(`[StorageService] Unknown key: ${key}`);
+                return;
+            }
+            this.storage.setItem(storageKey, value);
+        } catch (error) {
+            console.error('[StorageService] Set item error:', error);
+        }
+    }
+
     saveSession(appId, user, token, roomId) {
         try {
             this.storage.setItem(this.KEYS.lastAppId, appId);
-            this.storage.setItem(this.KEYS.lastUserId, user.email);
+            this.storage.setItem(this.KEYS.lastUserId, user.email || user.id);
             this.storage.setItem(this.KEYS.lastUserData, JSON.stringify(user));
             this.storage.setItem(this.KEYS.lastUserToken, token);
             if (roomId) {
