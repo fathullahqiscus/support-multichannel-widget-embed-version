@@ -135,20 +135,6 @@ class SDKService {
         return room;
     }
 
-    async getChatRoomWithMessages(roomId) {
-        if (!this.sdk) throw new Error('SDK not initialized');
-        
-        console.log('[SDKService] Getting chat room with messages:', roomId);
-        
-        // Get room and messages from SDK
-        const room = await this.sdk.getRoomById(roomId);
-        const messages = room?.comments || [];
-        
-        console.log('[SDKService] Room loaded with', messages.length, 'messages');
-        
-        return [room, messages];
-    }
-
     async getPreviousMessagesById(roomId, limit = 20, lastMessageId) {
         if (!this.sdk) throw new Error('SDK not initialized');
         
