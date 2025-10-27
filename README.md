@@ -10,61 +10,68 @@ A production-ready, SOLID-compliant customer support chat widget for websites. B
 ### 1. Include the Widget Files
 
 ```html
-<script src="services/EventEmitter.js"></script>
-<script src="services/StorageService.js"></script>
-<script src="services/SDKService.js"></script>
-<script src="services/APIService.js"></script>
-<script src="services/StateManager.js"></script>
-<script src="services/UIService.js"></script>
-<script src="services/ChatService.js"></script>
-<script src="qiscus-widget-refactored.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Website with Qiscus Chat</title>
+</head>
+<body>
+    <h1>Welcome to My Website</h1>
+    
+    <!-- Load Qiscus Widget Services -->
+    <script src="services/EventEmitter.js"></script>
+    <script src="services/StorageService.js"></script>
+    <script src="services/SDKService.js"></script>
+    <script src="services/APIService.js"></script>
+    <script src="services/StateManager.js"></script>
+    <script src="services/UIService.js"></script>
+    <script src="services/ChatService.js"></script>
+    <script src="qiscus-widget.js"></script>
+</body>
+</html>
 ```
 
 ### 2. Initialize the Widget
 
 ```javascript
-const widget = new QiscusMultichannelWidget({
-    appId: 'YOUR_APP_ID',
-    primaryColor: '#55B29A'
-});
+<script>
+    // Initialize widget with your App ID
+    const widget = new QiscusMultichannelWidget({
+        appId: 'YOUR_APP_ID',
+        channelId: 'YOUR_CHANNEL_ID', // Optional
+        primaryColor: '#55B29A',
+        onReady: (widget) => {
+            console.log('Widget is ready!');
+        }
+    });
 
-widget.setUser({
-    userId: 'customer@example.com',
-    displayName: 'John Doe'
-});
+    // Set user information
+    widget.setUser({
+        userId: 'customer@example.com',
+        displayName: 'John Doe',
+        avatarUrl: 'https://ui-avatars.com/api/?name=John+Doe',
+        extras: {
+            department: 'Sales'
+        },
+        userProperties: {
+            plan: 'Premium'
+        }
+    });
 
-widget.initiateChat();
+    // Initiate chat
+    widget.initiateChat();
+</script>
 ```
 
 ## 📚 Documentation
 
-### Interactive Tutorial (Recommended)
+### Available Documentation
 
-We provide a comprehensive **Google Codelab** tutorial with step-by-step instructions:
-
-#### Generate the Codelab
-
-```bash
-# Quick start - run the generator script
-./generate-docs.sh
-
-# Or manually with claat
-claat export codelab.md
-claat serve
-```
-
-Visit: `http://localhost:9090`
-
-#### Setup Instructions
-
-See [CODELAB_SETUP.md](./CODELAB_SETUP.md) for detailed setup instructions.
-
-### Documentation Files
-
-- **[codelab.md](./codelab.md)** - Interactive tutorial source
-- **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Complete API reference
-- **[API_IMPLEMENTATION_STATUS.md](./API_IMPLEMENTATION_STATUS.md)** - Implementation details
-- **[CODELAB_SETUP.md](./CODELAB_SETUP.md)** - Codelab generation guide
+- **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Complete API reference with all endpoints and parameters
+- **[index.html](./index.html)** - Working example implementation
+- **[docs/index.html](./docs/index.html)** - Interactive documentation (open in browser)
 
 ## ✨ Features
 
@@ -82,7 +89,7 @@ See [CODELAB_SETUP.md](./CODELAB_SETUP.md) for detailed setup instructions.
 The widget follows SOLID principles with a service-oriented architecture:
 
 ```
-qiscus-widget-refactored.js (Main Orchestrator)
+qiscus-widget.js (Main Orchestrator)
 ├── EventEmitter (Observer Pattern)
 ├── StorageService (Session Management)
 ├── SDKService (Qiscus SDK Wrapper)
@@ -90,6 +97,24 @@ qiscus-widget-refactored.js (Main Orchestrator)
 ├── StateManager (State Management)
 ├── UIService (DOM Manipulation)
 └── ChatService (Business Logic)
+```
+
+### Project Structure
+
+```
+vanilla-js-examples/
+├── services/
+│   ├── EventEmitter.js      # Event system for loose coupling
+│   ├── StorageService.js    # localStorage management
+│   ├── SDKService.js        # Qiscus SDK wrapper
+│   ├── APIService.js        # HTTP API client
+│   ├── StateManager.js      # State management
+│   ├── UIService.js         # DOM manipulation & rendering
+│   └── ChatService.js       # Business logic orchestration
+├── qiscus-widget.js         # Main widget class
+├── index.html               # Example implementation
+├── docs/                    # Interactive documentation
+└── API_DOCUMENTATION.md     # API reference
 ```
 
 ### Key Benefits
@@ -229,16 +254,23 @@ python -m http.server 8000
 npx http-server -p 8000
 
 # Open in browser
-open http://localhost:8000/example-refactored.html
+open http://localhost:8000/index.html
+```
+
+### View Documentation
+
+```bash
+# Open interactive documentation
+open docs/index.html
 ```
 
 ### Browser Compatibility
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-- Mobile browsers (iOS Safari, Chrome Mobile)
+- ✅ Chrome 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Edge 90+
+- ✅ Mobile browsers (iOS Safari, Chrome Mobile)
 
 ## 📦 Production Deployment
 
@@ -247,7 +279,7 @@ open http://localhost:8000/example-refactored.html
 ```bash
 # Using Terser
 npm install -g terser
-terser services/*.js qiscus-widget-refactored.js \
+terser services/*.js qiscus-widget.js \
   --compress \
   --mangle \
   --output qiscus-widget.min.js
@@ -381,14 +413,34 @@ This project is licensed under the MIT License.
 - 📧 Email: support@qiscus.com
 - 💬 Chat: Use the widget on [qiscus.com](https://qiscus.com)
 - 🐛 Issues: [GitHub Issues](https://github.com/fathullahqiscus/support-multichannel-widget-embed-version/issues)
-- 📚 Docs: [Interactive Codelab](./codelab.md)
+- 📚 Docs: [API Documentation](./API_DOCUMENTATION.md)
 
 ## 🔗 Links
 
 - [Qiscus Dashboard](https://multichannel.qiscus.com/)
 - [API Documentation](./API_DOCUMENTATION.md)
-- [Codelab Tutorial](./codelab.md)
-- [Setup Guide](./CODELAB_SETUP.md)
+- [Interactive Docs](./docs/index.html)
+- [Example Implementation](./index.html)
+
+## 📋 Getting Started Checklist
+
+- [ ] Get your App ID from [Qiscus Dashboard](https://multichannel.qiscus.com/)
+- [ ] Download or clone this repository
+- [ ] Include all service files in your HTML
+- [ ] Initialize widget with your App ID
+- [ ] Set user information
+- [ ] Call `initiateChat()` to start
+- [ ] Test in browser
+- [ ] Customize styling to match your brand
+- [ ] Deploy to production
+
+## 🎯 Next Steps
+
+1. **Review the example**: Open `index.html` to see a working implementation
+2. **Read API docs**: Check `API_DOCUMENTATION.md` for complete API reference
+3. **Customize**: Modify colors, styling, and behavior to match your needs
+4. **Test**: Try the widget with your Qiscus account
+5. **Deploy**: Follow production deployment guide above
 
 ---
 
