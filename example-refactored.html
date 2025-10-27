@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qiscus Widget - SOLID Refactored Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .demo-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #55B29A;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Qiscus Multichannel Widget - SOLID Refactored</h1>
+    
+    <div class="info">
+        <h3>Architecture Improvements</h3>
+        <ul>
+            <li><strong>Single Responsibility:</strong> Each service handles one concern</li>
+            <li><strong>Open/Closed:</strong> Easy to extend without modifying existing code</li>
+            <li><strong>Dependency Inversion:</strong> Services are injected, not hardcoded</li>
+            <li><strong>Better Testability:</strong> Services can be mocked and tested independently</li>
+            <li><strong>Maintainability:</strong> Clear separation makes debugging easier</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>Demo Controls</h2>
+        <button onclick="initWidget()">Initialize Widget</button>
+        <button onclick="startChat()">Start Chat</button>
+        <button onclick="sendTestMessage()">Send Test Message</button>
+        <button onclick="clearSession()">Clear Session</button>
+        <button onclick="showState()">Show State</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Event Log</h2>
+        <div id="log" style="background: white; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- Load all service modules -->
+    <script src="services/EventEmitter.js"></script>
+    <script src="services/StorageService.js"></script>
+    <script src="services/SDKService.js"></script>
+    <script src="services/APIService.js"></script>
+    <script src="services/StateManager.js"></script>
+    <script src="services/UIService.js"></script>
+    <script src="services/ChatService.js"></script>
+    <script src="qiscus-widget-refactored.js"></script>
+
+    <script>
+        let widget;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            logDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function initWidget() {
+            try {
+                widget = new QiscusMultichannelWidget({
+                    appId: 'ramo-29lun8b1ulepsaio', // Replace with your actual App ID
+                    channelId: '127590', // Optional
+                    primaryColor: '#55B29A',
+                    onReady: (w) => {
+                        log('Widget ready!', 'success');
+                    },
+                    onLoginSuccess: (user) => {
+                        log(`Login success: ${user.username}`, 'success');
+                    },
+                    onLoginError: (error) => {
+                        log(`Login error: ${error.message}`, 'error');
+                    },
+                    onMessageReceived: (message) => {
+                        log(`Message received: ${message.message}`);
+                    },
+                    onMessageSent: (message) => {
+                        log(`Message sent: ${message.message}`, 'success');
+                    },
+                    onRoomChanged: (room) => {
+                        log(`Room changed: ${room.id}`);
+                    },
+                    onTyping: (data) => {
+                        log(`Typing: ${data.typing}`);
+                    }
+                });
+
+                // Set user information
+                widget.setUser({
+                    userId: 'user-' + Date.now(),
+                    displayName: 'Demo User',
+                    avatarUrl: 'https://ui-avatars.com/api/?name=Demo+User',
+                    userProperties: {
+                        department: 'Support'
+                    }
+                });
+
+                log('Widget initialized successfully', 'success');
+            } catch (error) {
+                log(`Initialization error: ${error.message}`, 'error');
+            }
+        }
+
+        function startChat() {
+            if (!widget) {
+                log('Please initialize widget first', 'error');
+                return;
+            }
+
+            widget.initiateChat()
+                .then(() => {
+                    log('Chat initiated successfully', 'success');
+                })
+                .catch(error => {
+                    log(`Chat initiation error: ${error.message}`, 'error');
+                });
+        }
+
+        function sendTestMessage() {
+            if (!widget) {
+                log('Please initialize widget first', 'error');
+                return;
+            }
+
+            widget.sendMessage('Hello from SOLID refactored widget!')
+                .then(() => {
+                    log('Test message sent', 'success');
+                })
+                .catch(error => {
+                    log(`Send message error: ${error.message}`, 'error');
+                });
+        }
+
+        function clearSession() {
+            if (!widget) {
+                log('Please initialize widget first', 'error');
+                return;
+            }
+
+            widget.clearUser();
+            log('Session cleared', 'success');
+        }
+
+        function showState() {
+            if (!widget) {
+                log('Please initialize widget first', 'error');
+                return;
+            }
+
+            const state = widget.getState();
+            console.log('Current State:', state);
+            log('State logged to console (F12)', 'success');
+        }
+
+        // Auto-initialize on page load
+        window.addEventListener('load', () => {
+            log('Page loaded. Click "Initialize Widget" to start.');
+        });
+    </script>
+</body>
+</html>
