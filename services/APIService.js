@@ -48,7 +48,7 @@ class APIService {
      * @param {string} appId - Qiscus application ID
      * @returns {Promise<Object>} Response with is_sessional boolean
      */
-    async getSessionStatus(appId) {
+    async S(appId) {
         const response = await fetch(`${this.qismoBaseURL}/${appId}/get_session`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }

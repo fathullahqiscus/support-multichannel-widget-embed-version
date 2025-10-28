@@ -30,7 +30,7 @@ class SDKService {
         if (this.isInitialized) return this.sdk;
 
         this.sdk = new window.QiscusSDKCore();
-        
+        this.sdk.debugMode = true;
         await this.sdk.init({
             AppId: appId,
             options: this.getSDKCallbacks()
@@ -162,8 +162,10 @@ class SDKService {
         }
         
         try {
-            const messages = await this.sdk.loadMore(lastMessageId, limit);
-            console.log('[SDKService] Loaded', messages.length, 'previous messages');
+            const messages = await this.sdk.loadMore(lastMessageId, {
+                limit: limit
+            });
+            console.log('[SDKService] Loaded', messages, 'previous messages');
             return messages;
         } catch (error) {
             console.error('[SDKService] Failed to load previous messages:', error);
@@ -176,6 +178,8 @@ class SDKService {
     }
 
     isLoggedIn() {
+        if(!this.sdk) return false;
+        console.log('[SDKService] User is logged in:', this.sdk.isLogin);
         return this.sdk?.isLogin || false;
     }
 }
