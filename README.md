@@ -77,7 +77,9 @@ A production-ready, SOLID-compliant customer support chat widget for websites. B
 
 - ✅ **Zero Dependencies** - Pure vanilla JavaScript
 - ✅ **SOLID Principles** - Clean, maintainable architecture
-- ✅ **Session Persistence** - Automatic session management
+- ✅ **Smart Session Restoration** - Automatic session recovery with error handling
+- ✅ **Resolved Room Detection** - Intelligent conversation state management
+- ✅ **Sessional Conversations** - Support for resolved/new session workflows
 - ✅ **Real-time Messaging** - Instant message delivery
 - ✅ **Event-Driven** - Flexible event system
 - ✅ **Customizable UI** - Easy theming and styling
@@ -154,16 +156,72 @@ widget.setUser({
 await widget.initiateChat();
 ```
 
+### Session Restoration
+
+The widget automatically restores user sessions on page refresh:
+
+```javascript
+// On page load, the widget checks for existing session
+const widget = new QiscusMultichannelWidget({
+    appId: 'YOUR_APP_ID',
+    onReady: async (widget) => {
+        // Session is automatically restored during initialization
+        console.log('Widget ready');
+    }
+});
+
+// Listen for session restoration
+widget.eventEmitter.on('chat:restored', (data) => {
+    console.log('Session restored!');
+    console.log('User:', data.user);
+    console.log('Room ID:', data.roomId);
+    console.log('Room:', data.room);
+    console.log('Messages:', data.messages.length);
+});
+
+// If session exists, initiateChat will restore it
+// If session doesn't exist or restoration fails, it creates new session
+await widget.initiateChat();
+```
+
+### Resolved Room Handling
+
+The widget intelligently handles resolved conversations:
+
+```javascript
+// When a room is marked as resolved:
+// 1. Widget checks room.options.is_resolved flag
+// 2. If resolved AND app is sessional → creates new session
+// 3. If resolved AND app is NOT sessional → restores existing room
+// 4. If NOT resolved → always restores existing room
+
+// Check if room is resolved
+const isResolved = widget.chatService.checkIfRoomResolved();
+console.log('Room resolved:', isResolved);
+
+// The widget automatically handles this during initiateChat()
+```
+
 ### Event Handling
 
 ```javascript
 // Listen to specific events
+widget.eventEmitter.on('chat:restored', (data) => {
+    console.log('Session restored:', data.user);
+    console.log('Room:', data.room);
+    console.log('Messages:', data.messages.length);
+});
+
 widget.eventEmitter.on('message:received', (message) => {
     console.log('New message:', message);
 });
 
 widget.eventEmitter.on('message:sent', (message) => {
     console.log('Message sent:', message);
+});
+
+widget.eventEmitter.on('chat:error', (error) => {
+    console.error('Chat error:', error);
 });
 
 widget.eventEmitter.on('state:unreadChanged', (count) => {
@@ -185,7 +243,10 @@ widget.sendMessage('Hello!');
 // Load more messages
 widget.loadMoreMessages();
 
-// Clear session
+// Update room info (refresh room and messages)
+await widget.updateRoomInfo(roomId);
+
+// Clear session (use when session restoration fails)
 widget.clearUser();
 ```
 
@@ -351,6 +412,27 @@ const session = localStorage.getItem('QiscusWidget::last-user-data');
 console.log('Stored session:', session);
 ```
 
+### Session Restoration Failed
+
+```javascript
+// If you see: "Failed to restore existing session"
+// This means the widget found a session but couldn't restore it
+
+// Solution 1: Clear the session and try again
+widget.clearUser();
+widget.setUser({ userId: 'user@example.com', displayName: 'John' });
+await widget.initiateChat();
+
+// Solution 2: Manually clear localStorage
+Object.keys(localStorage)
+    .filter(key => key.startsWith('QiscusWidget::'))
+    .forEach(key => localStorage.removeItem(key));
+
+// Then reinitialize
+widget.setUser({ userId: 'user@example.com', displayName: 'John' });
+await widget.initiateChat();
+```
+
 ## 📄 API Reference
 
 ### Main Widget Class
@@ -364,13 +446,14 @@ new QiscusMultichannelWidget(config)
 #### Methods
 
 - `setUser(params)` - Set user information
-- `initiateChat()` - Start chat session
+- `initiateChat()` - Start chat session (restores existing session or creates new)
 - `sendMessage(text, extras)` - Send a message
 - `loadMoreMessages()` - Load message history
+- `updateRoomInfo(roomId)` - Update room info with messages (returns [room, messages])
 - `openWidget()` - Open the widget
 - `closeWidget()` - Close the widget
 - `toggleWidget()` - Toggle widget visibility
-- `clearUser()` - Clear user session
+- `clearUser()` - Clear user session (use when restoration fails)
 
 ### Event Emitter
 
@@ -382,17 +465,29 @@ widget.eventEmitter.emit(event, data)
 
 ### Available Events
 
-- `sdk:loginSuccess` - User logged in
-- `sdk:loginError` - Login failed
-- `sdk:newMessages` - New messages received
-- `sdk:typing` - Typing status changed
-- `message:sent` - Message sent
-- `message:received` - Message received
-- `room:loaded` - Room loaded
+#### Session Events
+- `chat:initiated` - New chat session created
+- `chat:restored` - Session restored from localStorage (includes user, room, messages)
+- `chat:error` - Chat error occurred (e.g., session restoration failed)
+- `session:cleared` - Session cleared by user
+
+#### Authentication Events
+- `sdk:loginSuccess` - User logged in to SDK
+- `sdk:loginError` - SDK login failed
+- `sdk:userSet` - User set with token
+
+#### Message Events
+- `message:sent` - Message sent successfully
+- `message:received` - New message received
+- `sdk:newMessages` - Multiple new messages received
 - `state:messageAdded` - Message added to state
-- `state:unreadChanged` - Unread count changed
-- `chat:initiated` - Chat session started
-- `chat:error` - Chat error occurred
+
+#### Room Events
+- `room:loaded` - Room data loaded
+- `state:unreadChanged` - Unread message count changed
+
+#### UI Events
+- `sdk:typing` - Typing status changed
 
 ## 🤝 Contributing
 

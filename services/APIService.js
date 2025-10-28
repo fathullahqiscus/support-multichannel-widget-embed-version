@@ -39,16 +39,11 @@ class APIService {
     }
 
     /**
-     * Get Session Status - Check if app is configured for sessional conversations
-     * Endpoint: GET /{appId}/get_session
-     * 
-     * When a conversation is resolved and the app is sessional, 
-     * a new chat session will be created instead of continuing the previous one.
-     * 
+     * Get session status (check if app is sessional)
      * @param {string} appId - Qiscus application ID
      * @returns {Promise<Object>} Response with is_sessional boolean
      */
-    async S(appId) {
+    async getSessionStatus(appId) {
         const response = await fetch(`${this.qismoBaseURL}/${appId}/get_session`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }

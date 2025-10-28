@@ -34,8 +34,9 @@
 <li>How to integrate Qiscus Multichannel Widget into your website</li>
 <li>Configure the widget with your app credentials</li>
 <li>Customize the widget appearance</li>
-<li>Handle user sessions and chat events</li>
-<li>Implement advanced features</li>
+<li>Handle user sessions with smart restoration</li>
+<li>Manage resolved conversations intelligently</li>
+<li>Implement advanced features and event handling</li>
 </ul>
 <h2 is-upgraded>What You&#39;ll Need</h2>
 <ul>
@@ -48,9 +49,10 @@
 <p>A fully functional customer support chat widget integrated into your website with:</p>
 <ul>
 <li>Real-time messaging</li>
-<li>Session persistence</li>
+<li>Smart session restoration with error handling</li>
+<li>Resolved room detection and management</li>
 <li>Custom styling</li>
-<li>Event handling</li>
+<li>Comprehensive event handling</li>
 <li>User management</li>
 </ul>
 
@@ -306,7 +308,27 @@ widget.initiateChat()
 </code></pre>
 <h2 is-upgraded>Using Event Emitter</h2>
 <p>For more granular control, use the event emitter:</p>
-<pre><code language="language-javascript" class="language-javascript">// Listen to specific events
+<pre><code language="language-javascript" class="language-javascript">// Session Events
+widget.eventEmitter.on(&#39;chat:initiated&#39;, (data) =&gt; {
+    console.log(&#39;New chat session created&#39;, data);
+});
+
+widget.eventEmitter.on(&#39;chat:restored&#39;, (data) =&gt; {
+    console.log(&#39;Session restored!&#39;);
+    console.log(&#39;User:&#39;, data.user);
+    console.log(&#39;Room:&#39;, data.room);
+    console.log(&#39;Messages:&#39;, data.messages.length);
+});
+
+widget.eventEmitter.on(&#39;chat:error&#39;, (error) =&gt; {
+    console.error(&#39;Chat error:&#39;, error);
+    // Handle session restoration failure
+    if (error.message.includes(&#39;restore&#39;)) {
+        widget.clearUser();
+    }
+});
+
+// Message Events
 widget.eventEmitter.on(&#39;message:received&#39;, (message) =&gt; {
     console.log(&#39;Message received:&#39;, message);
     
@@ -319,6 +341,15 @@ widget.eventEmitter.on(&#39;message:received&#39;, (message) =&gt; {
     }
 });
 
+widget.eventEmitter.on(&#39;message:sent&#39;, (message) =&gt; {
+    console.log(&#39;Message sent successfully&#39;, message);
+});
+
+// Room Events
+widget.eventEmitter.on(&#39;room:loaded&#39;, (room) =&gt; {
+    console.log(&#39;Room loaded:&#39;, room.name);
+});
+
 widget.eventEmitter.on(&#39;state:unreadChanged&#39;, (count) =&gt; {
     console.log(&#39;Unread messages:&#39;, count);
     
@@ -326,13 +357,41 @@ widget.eventEmitter.on(&#39;state:unreadChanged&#39;, (count) =&gt; {
     document.getElementById(&#39;unread-badge&#39;).textContent = count;
 });
 
-widget.eventEmitter.on(&#39;chat:error&#39;, (error) =&gt; {
-    console.error(&#39;Chat error:&#39;, error);
-    
-    // Show user-friendly error message
-    alert(&#39;Unable to connect to chat. Please try again.&#39;);
+// Authentication Events
+widget.eventEmitter.on(&#39;sdk:loginSuccess&#39;, (user) =&gt; {
+    console.log(&#39;SDK login successful&#39;, user);
+});
+
+widget.eventEmitter.on(&#39;sdk:userSet&#39;, (userData) =&gt; {
+    console.log(&#39;User set with token&#39;, userData);
 });
 </code></pre>
+<h2 is-upgraded>Available Events</h2>
+<p><strong>Session Events:</strong></p>
+<ul>
+<li><code>chat:initiated</code> - New chat session created</li>
+<li><code>chat:restored</code> - Session restored from localStorage</li>
+<li><code>chat:error</code> - Chat error occurred</li>
+<li><code>session:cleared</code> - Session cleared by user</li>
+</ul>
+<p><strong>Message Events:</strong></p>
+<ul>
+<li><code>message:sent</code> - Message sent successfully</li>
+<li><code>message:received</code> - New message received</li>
+<li><code>sdk:newMessages</code> - Multiple new messages received</li>
+<li><code>state:messageAdded</code> - Message added to state</li>
+</ul>
+<p><strong>Room Events:</strong></p>
+<ul>
+<li><code>room:loaded</code> - Room data loaded</li>
+<li><code>state:unreadChanged</code> - Unread message count changed</li>
+</ul>
+<p><strong>Authentication Events:</strong></p>
+<ul>
+<li><code>sdk:loginSuccess</code> - User logged in to SDK</li>
+<li><code>sdk:loginError</code> - SDK login failed</li>
+<li><code>sdk:userSet</code> - User set with token</li>
+</ul>
 
 
       </google-codelab-step>
@@ -357,6 +416,12 @@ widget.loadMoreMessages()
     .then((messages) =&gt; {
         console.log(&#39;Loaded messages:&#39;, messages);
     });
+
+// Update room info (refresh room and messages)
+const roomId = widget.stateManager.get(&#39;roomId&#39;);
+const [room, messages] = await widget.updateRoomInfo(roomId);
+console.log(&#39;Room:&#39;, room);
+console.log(&#39;Messages:&#39;, messages.length);
 
 // Clear user session
 widget.clearUser();
@@ -419,38 +484,73 @@ widget.sendMessage(&#39;I need help with my order&#39;, {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Session Management" duration="3">
-        <h2 is-upgraded>Automatic Session Persistence</h2>
-<p>The widget automatically saves and restores user sessions:</p>
-<pre><code language="language-javascript" class="language-javascript">// Session is automatically saved to localStorage
-// On page refresh, session is restored automatically
+      <google-codelab-step label="Session Management" duration="5">
+        <h2 is-upgraded>Smart Session Restoration</h2>
+<p>The widget automatically saves and restores user sessions with intelligent error handling:</p>
+<pre><code language="language-javascript" class="language-javascript">// Listen for session restoration
+widget.eventEmitter.on(&#39;chat:restored&#39;, (data) => {
+    console.log(&#39;Session restored!&#39;);
+    console.log(&#39;User:&#39;, data.user);
+    console.log(&#39;Room:&#39;, data.room);
+    console.log(&#39;Messages:&#39;, data.messages.length);
+});
+
+// Listen for errors
+widget.eventEmitter.on(&#39;chat:error&#39;, (error) => {
+    console.error(&#39;Session error:&#39;, error);
+    // Handle failed restoration
+    widget.clearUser();
+});
 </code></pre>
 <h2 is-upgraded>Session Flow</h2>
 <ol type="1">
 <li><strong>First Visit</strong>: User sets info and initiates chat</li>
-<li><strong>Session Saved</strong>: User data, token, and room ID stored</li>
-<li><strong>Page Refresh</strong>: Session automatically restored</li>
-<li><strong>Resolved Conversations</strong>: New session created if configured</li>
+<li><strong>Session Saved</strong>: User data, token, and room ID stored in localStorage</li>
+<li><strong>Page Refresh</strong>: Widget checks for existing session</li>
+<li><strong>Session Restored</strong>: Room and messages automatically loaded</li>
+<li><strong>Resolved Rooms</strong>: Intelligent handling based on app configuration</li>
 </ol>
-<h2 is-upgraded>Checking Session Status</h2>
-<pre><code language="language-javascript" class="language-javascript">// Check if user has active session
-const hasSession = widget.storageService.getSession(widget.config.appId);
+<h2 is-upgraded>Resolved Room Handling</h2>
+<p>The widget intelligently handles resolved conversations:</p>
+<pre><code language="language-javascript" class="language-javascript">// When a room is marked as resolved:
+// 1. Widget checks room.options.is_resolved flag
+// 2. If resolved AND app is sessional → creates new session
+// 3. If resolved AND app is NOT sessional → restores existing room
+// 4. If NOT resolved → always restores existing room
 
-if (hasSession) {
-    console.log(&#39;User has existing session&#39;);
-} else {
-    console.log(&#39;No existing session&#39;);
+// Check if room is resolved
+const isResolved = widget.chatService.checkIfRoomResolved();
+console.log(&#39;Room resolved:&#39;, isResolved);
+</code></pre>
+<h2 is-upgraded>Session Restoration with Error Handling</h2>
+<pre><code language="language-javascript" class="language-javascript">// initiateChat() automatically handles session restoration
+try {
+    await widget.initiateChat();
+    // Session restored or new session created
+} catch (error) {
+    console.error(&#39;Failed to initiate chat:&#39;, error);
+    
+    // If session restoration fails, clear and retry
+    widget.clearUser();
+    widget.setUser({ userId: &#39;user@example.com&#39;, displayName: &#39;John&#39; });
+    await widget.initiateChat();
 }
 </code></pre>
 <h2 is-upgraded>Manual Session Control</h2>
 <pre><code language="language-javascript" class="language-javascript">// Clear session manually
 widget.clearUser();
 
-// Re-initiate after clearing
-widget.setUser({ /* user info */ });
-widget.initiateChat();
+// Check session status
+const session = widget.storageService.getSession(widget.config.appId);
+console.log(&#39;Has session:&#39;, !!session);
+
+// Update room info manually
+const [room, messages] = await widget.updateRoomInfo(roomId);
+console.log(&#39;Room:&#39;, room);
+console.log(&#39;Messages:&#39;, messages.length);
 </code></pre>
-<p>Positive : Sessions persist across page refreshes, providing seamless user experience!</p>
+<p>Positive : Sessions persist across page refreshes with automatic error recovery!</p>
+<p>Negative : If you see &#34;Failed to restore existing session&#34;, use widget.clearUser() to reset</p>
 
 
       </google-codelab-step>
