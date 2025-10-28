@@ -22,13 +22,14 @@ A production-ready, SOLID-compliant customer support chat widget for websites. B
     
     <!-- Load Qiscus Widget Services -->
     <script src="services/EventEmitter.js"></script>
+    <script src="services/LoggerService.js"></script>
     <script src="services/StorageService.js"></script>
     <script src="services/SDKService.js"></script>
     <script src="services/APIService.js"></script>
     <script src="services/StateManager.js"></script>
     <script src="services/UIService.js"></script>
     <script src="services/ChatService.js"></script>
-    <script src="qiscus-widget.js"></script>
+    <script src="services/qiscus-widget.js"></script>
 </body>
 </html>
 ```
@@ -93,6 +94,7 @@ The widget follows SOLID principles with a service-oriented architecture:
 ```
 qiscus-widget.js (Main Orchestrator)
 ├── EventEmitter (Observer Pattern)
+├── LoggerService (Conditional Logging)
 ├── StorageService (Session Management)
 ├── SDKService (Qiscus SDK Wrapper)
 ├── APIService (HTTP Client)
@@ -107,6 +109,7 @@ qiscus-widget.js (Main Orchestrator)
 vanilla-js-examples/
 ├── services/
 │   ├── EventEmitter.js      # Event system for loose coupling
+│   ├── LoggerService.js     # Conditional logging with debug mode
 │   ├── StorageService.js    # localStorage management
 │   ├── SDKService.js        # Qiscus SDK wrapper
 │   ├── APIService.js        # HTTP API client
@@ -136,6 +139,7 @@ const widget = new QiscusMultichannelWidget({
     appId: 'YOUR_APP_ID',
     channelId: 'YOUR_CHANNEL_ID',
     primaryColor: '#55B29A',
+    debugMode: false, // Set to true for development, false for production
     onReady: (widget) => {
         console.log('Widget ready!');
     }
@@ -293,6 +297,7 @@ const widget = new QiscusMultichannelWidget({
 | `appId` | string | **required** | Your Qiscus App ID |
 | `channelId` | string | optional | Specific channel ID |
 | `baseURL` | string | `https://multichannel.qiscus.com` | API base URL |
+| `debugMode` | boolean | `false` | Enable debug logging (set to `false` for production) |
 | `primaryColor` | string | `#55B29A` | Main theme color |
 | `secondaryColor` | string | `#F4F4F4` | Secondary color |
 | `onReady` | function | `() => {}` | Called when widget is ready |
@@ -371,6 +376,19 @@ terser services/*.js qiscus-widget.js \
 ```
 
 ## 🐛 Troubleshooting
+
+### Enable Debug Mode
+
+For development and troubleshooting, enable debug mode to see detailed logs:
+
+```javascript
+const widget = new QiscusMultichannelWidget({
+    appId: 'YOUR_APP_ID',
+    debugMode: true  // Enable detailed logging
+});
+```
+
+**Important:** Always set `debugMode: false` in production to avoid exposing sensitive information and improve performance.
 
 ### Widget Not Appearing
 

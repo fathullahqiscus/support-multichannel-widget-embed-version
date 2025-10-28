@@ -36,6 +36,7 @@ class QiscusMultichannelWidget {
             appId: config.appId,
             baseURL: config.baseURL || 'https://multichannel.qiscus.com',
             channelId: config.channelId,
+            debugMode: config.debugMode !== undefined ? config.debugMode : false,
             theme: {
                 primaryColor: config.primaryColor || '#55B29A',
                 secondaryColor: config.secondaryColor || '#F4F4F4',
@@ -55,16 +56,18 @@ class QiscusMultichannelWidget {
 
     initializeServices() {
         // Create services with dependency injection
+        this.logger = new LoggerService(this.config.debugMode);
         this.storageService = new StorageService();
         this.stateManager = new StateManager(this.eventEmitter);
-        this.sdkService = new SDKService(this.eventEmitter);
+        this.sdkService = new SDKService(this.eventEmitter, this.logger);
         this.apiService = new APIService(this.config.baseURL);
         this.chatService = new ChatService(
             this.sdkService,
             this.apiService,
             this.stateManager,
             this.storageService,
-            this.eventEmitter
+            this.eventEmitter,
+            this.logger
         );
         this.uiService = new UIService(this.config.theme, this.eventEmitter);
     }
@@ -87,7 +90,7 @@ class QiscusMultichannelWidget {
         });
 
         this.eventEmitter.on('chat:restored', (data) => {
-            console.log('[QiscusWidget] Session restored:', {
+            this.logger.log('[QiscusWidget] Session restored:', {
                 userId: data.user?.email || data.user?.id,
                 roomId: data.roomId,
                 messagesCount: data.messages?.length || 0
@@ -142,7 +145,7 @@ class QiscusMultichannelWidget {
 
     async initialize() {
         try {
-            console.log('[QiscusWidget] Initializing...');
+            this.logger.log('[QiscusWidget] Initializing...');
             
             await this.sdkService.loadSDK();
             await this.sdkService.initialize(this.config.appId);
@@ -150,10 +153,10 @@ class QiscusMultichannelWidget {
             
             this.uiService.createWidget();
             
-            console.log('[QiscusWidget] Initialized successfully');
+            this.logger.log('[QiscusWidget] Initialized successfully');
             this.config.callbacks.onReady(this);
         } catch (error) {
-            console.error('[QiscusWidget] Initialization error:', error);
+            this.logger.error('[QiscusWidget] Initialization error:', error);
         }
     }
 
@@ -165,7 +168,7 @@ class QiscusMultichannelWidget {
         const lastUserToken = this.storageService.getItem('lastUserToken');
         const lastRoomIdStr = this.storageService.getItem('lastRoomId');
         
-        console.log('[QiscusWidget] Restoring session:', {
+        this.logger.log('[QiscusWidget] Restoring session:', {
             lastAppId,
             lastUserData: lastUserData?.id,
             hasToken: !!lastUserToken,
@@ -210,9 +213,9 @@ class QiscusMultichannelWidget {
                     this.sdkService.sdk.token = lastUserToken;
                     this.sdkService.sdk.isLogin = true;
                     
-                    console.log('[QiscusWidget] SDK session restored');
+                    this.logger.log('[QiscusWidget] SDK session restored');
                 } catch (error) {
-                    console.error('[QiscusWidget] Failed to restore SDK session:', error);
+                    this.logger.error('[QiscusWidget] Failed to restore SDK session:', error);
                 }
             }
         }
@@ -221,10 +224,10 @@ class QiscusMultichannelWidget {
         if (lastRoomIdStr != null) {
             const roomId = parseInt(lastRoomIdStr, 10);
             this.stateManager.setState({ roomId });
-            console.log('[QiscusWidget] Room ID restored:', roomId);
+            this.logger.log('[QiscusWidget] Room ID restored:', roomId);
         }
 
-        console.log('[QiscusWidget] Session restoration complete');
+        this.logger.log('[QiscusWidget] Session restoration complete');
     }
 
     // Public API Methods
@@ -236,7 +239,7 @@ class QiscusMultichannelWidget {
             extras: params.extras || {},
             userProperties: params.userProperties || {}
         };
-        console.log('[QiscusWidget] User configured:', this.userConfig.userId);
+        this.logger.log('[QiscusWidget] User configured:', this.userConfig.userId);
     }
 
     async initiateChat() {
@@ -273,7 +276,7 @@ class QiscusMultichannelWidget {
     clearUser() {
         this.chatService.clearSession();
         this.userConfig = null;
-        console.log('[QiscusWidget] User session cleared');
+        this.logger.log('[QiscusWidget] User session cleared');
     }
 
     openWidget() {
@@ -304,7 +307,7 @@ class QiscusMultichannelWidget {
             try {
                 await this.initiateChat();
             } catch (error) {
-                console.error('[QiscusWidget] Chat initiation failed:', error);
+                this.logger.error('[QiscusWidget] Chat initiation failed:', error);
             }
         } else {
             this.openWidget();
@@ -322,7 +325,7 @@ class QiscusMultichannelWidget {
             await this.sendMessage(text);
             this.uiService.clearMessageInput();
         } catch (error) {
-            console.error('[QiscusWidget] Send message failed:', error);
+            this.logger.error('[QiscusWidget] Send message failed:', error);
         }
     }
 

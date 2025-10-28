@@ -73,13 +73,14 @@
 
     <!-- Load all service modules -->
     <script src="services/EventEmitter.js"></script>
+    <script src="services/LoggerService.js"></script>
     <script src="services/StorageService.js"></script>
     <script src="services/SDKService.js"></script>
     <script src="services/APIService.js"></script>
     <script src="services/StateManager.js"></script>
     <script src="services/UIService.js"></script>
     <script src="services/ChatService.js"></script>
-    <script src="qiscus-widget.js"></script>
+    <script src="services/qiscus-widget.js"></script>
 
     <script>
         let widget;
@@ -95,7 +96,7 @@
         function initWidget() {
             try {
                 widget = new QiscusMultichannelWidget({
-                    appId: 'ramo-29lun8b1ulepsaio', // Replace with your actual App ID
+                    appId: 'your-app-id', // Replace with your actual App ID
                     channelId: '127590', // Optional
                     primaryColor: '#55B29A',
                     onReady: (w) => {

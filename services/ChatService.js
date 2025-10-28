@@ -3,29 +3,30 @@
  * Follows Single Responsibility Principle
  */
 class ChatService {
-    constructor(sdkService, apiService, stateManager, storageService, eventEmitter) {
+    constructor(sdkService, apiService, stateManager, storageService, eventEmitter, logger) {
         this.sdkService = sdkService;
         this.apiService = apiService;
         this.stateManager = stateManager;
         this.storageService = storageService;
         this.eventEmitter = eventEmitter;
+        this.logger = logger;
     }
 
     async initiateChat(appId, channelId, userConfig) {
         try {
-            console.log('[ChatService] Initiating chat...');
+            this.logger.log('[ChatService] Initiating chat...');
 
             // Check if user has existing session
             const existingSession = this.storageService.getSession(appId);
 
             if (existingSession && existingSession.user && existingSession.token && existingSession.roomId) {
-                console.log('[ChatService] Found existing session, attempting to restore...');
+                this.logger.log('[ChatService] Found existing session, attempting to restore...');
 
                 // Try to restore previous session
                 const restoredSession = await this.tryRestoreSession(appId);
 
                 if (restoredSession) {
-                    console.log('[ChatService] Session restored successfully');
+                    this.logger.log('[ChatService] Session restored successfully');
                     this.eventEmitter.emit('chat:restored', {
                         user: restoredSession.user,
                         roomId: restoredSession.roomId,
@@ -36,17 +37,17 @@ class ChatService {
                 } else {
                     // Session exists but restoration failed - throw error
                     const error = new Error('Failed to restore existing session. Please clear your session and try again.');
-                    console.error('[ChatService] Session restoration failed for existing session');
+                    this.logger.error('[ChatService] Session restoration failed for existing session');
                     this.eventEmitter.emit('chat:error', error);
                     throw error;
                 }
             }
 
-            console.log('[ChatService] No existing session found, creating new session...');
+            this.logger.log('[ChatService] No existing session found, creating new session...');
 
             // Get nonce from SDK (matches React Native getJWTNonce)
             const nonce = await this.sdkService.getNonce();
-            console.log('[ChatService] Nonce:', nonce);
+            this.logger.log('[ChatService] Nonce:', nonce);
 
             // Prepare API request (matches React Native)
             const data = {
@@ -67,18 +68,18 @@ class ChatService {
             // Call initiate chat API
             const result = await this.apiService.initiateChat(data);
             const { identity_token, customer_room } = result.data;
-            console.log('[ChatService] Initiate chat result:', result);
+            this.logger.log('[ChatService] Initiate chat result:', result);
 
             // Parse room ID
             const roomId = Number(customer_room.room_id);
 
             // Verify identity token and get user data
             const userData = await this.sdkService.verifyIdentityToken(identity_token);
-            console.log('[ChatService] User data:', userData);
+            this.logger.log('[ChatService] User data:', userData);
 
             // Set user with token (matches React Native setUserWithIdentityToken)
             const user = await this.sdkService.setUserWithToken(userData);
-            console.log('[ChatService] User set:', user);
+            this.logger.log('[ChatService] User set:', user);
 
             // Get user token from SDK
             const userToken = this.sdkService.getUserToken();
@@ -86,7 +87,7 @@ class ChatService {
             // Save session to storage (matches React Native AsyncStorage.multiSet)
             // Save userData (from verifyIdentityToken) to match what we restore
             this.storageService.saveSession(appId, userData, userToken, roomId);
-            console.log('[ChatService] Session saved');
+            this.logger.log('[ChatService] Session saved');
 
             // Update state (matches React Native atom setters)
             this.stateManager.setState({
@@ -103,7 +104,7 @@ class ChatService {
             // Return user (matches React Native return value)
             return userData;
         } catch (error) {
-            console.error('[ChatService] Initiate chat error:', error);
+            this.logger.error('[ChatService] Initiate chat error:', error);
             this.eventEmitter.emit('chat:error', error);
             throw error;
         }
@@ -116,7 +117,7 @@ class ChatService {
      */
     async updateRoomInfo(roomId) {
         if (!this.sdkService.isLoggedIn()) {
-            console.log('[ChatService] User is not logged in');
+            this.logger.log('[ChatService] User is not logged in');
             return [null, []];
         }
         const currentUser = this.stateManager.get('currentUser');
@@ -129,8 +130,8 @@ class ChatService {
         const roomObj = await this.sdkService.getRoom(roomId);
         let room = roomObj;
         let messages = Array.isArray(roomObj?.comments) ? roomObj.comments : [];
-        console.log('[ChatService] updateRoomInfo Room:', room);
-        console.log('[ChatService] updateRoomInfo Messages:', messages);
+        this.logger.log('[ChatService] updateRoomInfo Room:', room);
+        this.logger.log('[ChatService] updateRoomInfo Messages:', messages);
 
         // Get previous messages (matches React Native getPreviousMessagesById)
         if (messages.length > 0) {
@@ -195,11 +196,11 @@ class ChatService {
      */
     async tryRestoreSession(appId) {
         const session = this.storageService.getSession(appId);
-        console.log('[ChatService] Attempting to restore session:', session);
+        this.logger.log('[ChatService] Attempting to restore session:', session);
 
         // If no session exists, return null to create new session
         if (!session) {
-            console.log('[ChatService] No stored session found');
+            this.logger.log('[ChatService] No stored session found');
             return null;
         }
 
@@ -207,12 +208,12 @@ class ChatService {
 
         // Validate session data
         if (!user || !token || !roomId) {
-            console.log('[ChatService] Incomplete session data:', { hasUser: !!user, hasToken: !!token, hasRoomId: !!roomId });
+            this.logger.log('[ChatService] Incomplete session data:', { hasUser: !!user, hasToken: !!token, hasRoomId: !!roomId });
             return null;
         }
 
         try {
-            console.log('[ChatService] Restoring session for user:', user.user.username || user.user.id, 'room:', roomId);
+            this.logger.log('[ChatService] Restoring session for user:', user.user.username || user.user.id, 'room:', roomId);
 
             // Set user with token first to authenticate
             // Set user with token and wait for completion
@@ -225,27 +226,27 @@ class ChatService {
             const [room, messages] = await this.updateRoomInfo(roomId);
 
             if (!room) {
-                console.log('[ChatService] Failed to load room:', roomId);
+                this.logger.log('[ChatService] Failed to load room:', roomId);
                 return null;
             }
 
             // Check if room is resolved using the dedicated method
             const isResolved = this.checkIfRoomResolved();
-            console.log('[ChatService] Room resolved status:', isResolved);
+            this.logger.log('[ChatService] Room resolved status:', isResolved);
 
             // Only check session status if room is resolved
             if (isResolved) {
                 const isSessional = await this.shouldCreateNewSession(appId);
-                console.log('[ChatService] App sessional status:', isSessional);
+                this.logger.log('[ChatService] App sessional status:', isSessional);
 
                 if (isSessional) {
-                    console.log('[ChatService] Room resolved and app is sessional - new session required');
+                    this.logger.log('[ChatService] Room resolved and app is sessional - new session required');
                     return null;
                 }
             }
 
             // Restore session - room is either not resolved or app is not sessional
-            console.log('[ChatService] Session restored successfully');
+            this.logger.log('[ChatService] Session restored successfully');
             this.stateManager.setState({
                 currentUser: user,
                 roomId: roomId,
@@ -257,7 +258,7 @@ class ChatService {
             return { user, roomId };
 
         } catch (error) {
-            console.error('[ChatService] Failed to restore session:', error);
+            this.logger.error('[ChatService] Failed to restore session:', error);
             return null;
         }
     }
@@ -273,10 +274,10 @@ class ChatService {
         try {
             const response = await this.apiService.getSessionStatus(appId);
             const isSessional = response.data?.is_sessional || false;
-            console.log('[ChatService] App is sessional:', isSessional);
+            this.logger.log('[ChatService] App is sessional:', isSessional);
             return isSessional;
         } catch (error) {
-            console.error('[ChatService] Failed to get session status:', error);
+            this.logger.error('[ChatService] Failed to get session status:', error);
             // Default to non-sessional if API fails
             return false;
         }
@@ -301,9 +302,9 @@ class ChatService {
             this.stateManager.setMessages(messages);
 
             this.eventEmitter.emit('room:loaded', room);
-            console.log('[ChatService] Room loaded with', messages.length, 'messages');
+            this.logger.log('[ChatService] Room loaded with', messages.length, 'messages');
         } catch (error) {
-            console.error('[ChatService] Load room error:', error);
+            this.logger.error('[ChatService] Load room error:', error);
             throw error;
         }
     }
@@ -324,7 +325,7 @@ class ChatService {
             this.eventEmitter.emit('message:sent', message);
             return message;
         } catch (error) {
-            console.error('[ChatService] Send message error:', error);
+            this.logger.error('[ChatService] Send message error:', error);
             throw error;
         }
     }
@@ -337,10 +338,10 @@ class ChatService {
             const lastMessageId = messages[0].id;
             const olderMessages = await this.sdkService.loadMoreMessages(lastMessageId);
             this.stateManager.prependMessages(olderMessages);
-            console.log('[ChatService] Loaded', olderMessages.length, 'more messages');
+            this.logger.log('[ChatService] Loaded', olderMessages.length, 'more messages');
             return olderMessages;
         } catch (error) {
-            console.error('[ChatService] Load more messages error:', error);
+            this.logger.error('[ChatService] Load more messages error:', error);
             return [];
         }
     }
@@ -361,7 +362,7 @@ class ChatService {
 
     checkIfRoomResolved() {
         const room = this.stateManager.get('room');
-        console.log('[ChatService] checkIfRoomResolved Room:', room);
+        this.logger.log('[ChatService] checkIfRoomResolved Room:', room);
         if (!room) return false;
 
         // Check is_resolved from multiple possible locations
@@ -372,9 +373,9 @@ class ChatService {
             try {
                 const options = typeof room.options === 'string' ? JSON.parse(room.options) : room.options;
                 isResolved = options?.is_resolved === true || options?.extras?.is_resolved === true;
-                console.log('[ChatService] Resolved from room.options:', isResolved);
+                this.logger.log('[ChatService] Resolved from room.options:', isResolved);
             } catch (error) {
-                console.error('[ChatService] Failed to parse room.options:', error);
+                this.logger.error('[ChatService] Failed to parse room.options:', error);
             }
         }
         return isResolved;

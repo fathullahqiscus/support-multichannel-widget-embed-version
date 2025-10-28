@@ -94,7 +94,7 @@
 cd support-multichannel-widget-embed-version
 </code></pre>
 <h2 is-upgraded>Step 2: Include Required Files</h2>
-<p>Add these files to your HTML page in the correct order:</p>
+<p>Add these files to your HTML page in the correct order (including LoggerService):</p>
 <pre><code language="language-html" class="language-html">&lt;!DOCTYPE html&gt;
 &lt;html lang=&#34;en&#34;&gt;
 &lt;head&gt;
@@ -107,13 +107,14 @@ cd support-multichannel-widget-embed-version
     
     &lt;!-- Load Qiscus Widget Services --&gt;
     &lt;script src=&#34;services/EventEmitter.js&#34;&gt;&lt;/script&gt;
+    &lt;script src=&#34;services/LoggerService.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/StorageService.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/SDKService.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/APIService.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/StateManager.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/UIService.js&#34;&gt;&lt;/script&gt;
     &lt;script src=&#34;services/ChatService.js&#34;&gt;&lt;/script&gt;
-    &lt;script src=&#34;qiscus-widget-refactored.js&#34;&gt;&lt;/script&gt;
+    &lt;script src=&#34;qiscus-widget.js&#34;&gt;&lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;
 </code></pre>
@@ -170,7 +171,7 @@ widget.initiateChat()
 <h2 is-upgraded>Complete Example</h2>
 <pre><code language="language-html" class="language-html">&lt;script&gt;
     const widget = new QiscusMultichannelWidget({
-        appId: &#39;ramo-29lun8b1ulepsaio&#39;,
+        appId: &#39;your-app-id&#39;,
         primaryColor: &#39;#55B29A&#39;
     });
 
@@ -392,6 +393,34 @@ widget.eventEmitter.on(&#39;sdk:userSet&#39;, (userData) =&gt; {
 <li><code>sdk:loginError</code> - SDK login failed</li>
 <li><code>sdk:userSet</code> - User set with token</li>
 </ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Debug Mode &amp; Logging" duration="3">
+        <h2 is-upgraded>Enable Debug Mode</h2>
+<p>For development and troubleshooting, enable debug mode to see detailed logs:</p>
+<pre><code language="language-javascript" class="language-javascript">const widget = new QiscusMultichannelWidget({
+    appId: &#39;YOUR_APP_ID&#39;,
+    debugMode: true  // Enable detailed logging
+});
+</code></pre>
+<p>Negative : Always set <code>debugMode: false</code> in production to avoid exposing sensitive information!</p>
+<h2 is-upgraded>LoggerService</h2>
+<p>The widget uses a centralized LoggerService for conditional logging:</p>
+<ul>
+<li><strong>Debug Mode ON</strong>: All logs are shown (development)</li>
+<li><strong>Debug Mode OFF</strong>: Only errors are logged (production)</li>
+</ul>
+<h2 is-upgraded>Production Configuration</h2>
+<pre><code language="language-javascript" class="language-javascript">// Production-ready configuration
+const widget = new QiscusMultichannelWidget({
+    appId: &#39;YOUR_APP_ID&#39;,
+    debugMode: false,  // No debug logs (default)
+    primaryColor: &#39;#55B29A&#39;
+});
+</code></pre>
+<p>Positive : Debug mode defaults to <code>false</code> for production safety!</p>
 
 
       </google-codelab-step>
@@ -966,7 +995,7 @@ window.addEventListener(&#39;online&#39;, () =&gt; {
     &lt;script&gt;
         // Initialize widget
         const widget = new QiscusMultichannelWidget({
-            appId: &#39;ramo-29lun8b1ulepsaio&#39;,
+            appId: &#39;your-app-id&#39;,
             channelId: &#39;127590&#39;,
             primaryColor: &#39;#667eea&#39;,
             

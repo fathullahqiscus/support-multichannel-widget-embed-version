@@ -3,8 +3,9 @@
  * Follows Single Responsibility Principle
  */
 class SDKService {
-    constructor(eventEmitter) {
+    constructor(eventEmitter, logger) {
         this.eventEmitter = eventEmitter;
+        this.logger = logger;
         this.sdk = null;
         this.isInitialized = false;
     }
@@ -18,7 +19,7 @@ class SDKService {
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/qiscus-sdk-core';
             script.onload = () => {
-                console.log('[SDKService] SDK loaded');
+                this.logger.log('[SDKService] SDK loaded');
                 resolve();
             };
             script.onerror = () => reject(new Error('Failed to load Qiscus SDK'));
@@ -30,14 +31,14 @@ class SDKService {
         if (this.isInitialized) return this.sdk;
 
         this.sdk = new window.QiscusSDKCore();
-        this.sdk.debugMode = true;
+        this.sdk.debugMode = this.logger.debugMode;
         await this.sdk.init({
             AppId: appId,
             options: this.getSDKCallbacks()
         });
 
         this.isInitialized = true;
-        console.log('[SDKService] SDK initialized');
+        this.logger.log('[SDKService] SDK initialized');
         return this.sdk;
     }
 
@@ -83,7 +84,7 @@ class SDKService {
         if (!this.sdk) throw new Error('SDK not initialized');
         
         const userData = await this.sdk.verifyIdentityToken(identityToken);
-        console.log('[SDKService] Identity token verified:', userData);
+        this.logger.log('[SDKService] Identity token verified:', userData);
         return userData;
     }
 
@@ -97,7 +98,7 @@ class SDKService {
         if (this.sdk.HTTPAdapter) {
             this.sdk.HTTPAdapter.token = userData.user.token;
             this.sdk.token = userData.user.token;
-            console.log('[SDKService] User token set:', this.sdk.token);
+            this.logger.log('[SDKService] User token set:', this.sdk.token);
         }
         
         this.eventEmitter.emit('sdk:userSet', userData);
@@ -139,15 +140,15 @@ class SDKService {
      */
     async getRoom(roomId) {
         if (!this.sdk) throw new Error('SDK not initialized');
-        console.log('[SDKService] user data:', this.getUserData());
+        this.logger.log('[SDKService] user data:', this.getUserData());
         
         if(!this.sdk.HTTPAdapter || !this.sdk.HTTPAdapter.token) throw new Error('User not logged in');
         
-        console.log('[SDKService] Getting chat room with messages:', roomId);
+        this.logger.log('[SDKService] Getting chat room with messages:', roomId);
         
         // Use chatTarget to load room (this properly initializes the room)
         const room = await this.sdk.getRoomById(roomId);
-        console.log('[SDKService] Room loaded with', room.comments?.length || 0, 'messages');
+        this.logger.log('[SDKService] Room loaded with', room.comments?.length || 0, 'messages');
         
         return room;
     }
@@ -155,7 +156,7 @@ class SDKService {
     async getPreviousMessagesById(roomId, limit = 20, lastMessageId) {
         if (!this.sdk) throw new Error('SDK not initialized');
         
-        console.log('[SDKService] Loading previous messages:', { roomId, limit, lastMessageId });
+        this.logger.log('[SDKService] Loading previous messages:', { roomId, limit, lastMessageId });
         
         if (!lastMessageId) {
             return [];
@@ -165,10 +166,10 @@ class SDKService {
             const messages = await this.sdk.loadMore(lastMessageId, {
                 limit: limit
             });
-            console.log('[SDKService] Loaded', messages, 'previous messages');
+            this.logger.log('[SDKService] Loaded', messages, 'previous messages');
             return messages;
         } catch (error) {
-            console.error('[SDKService] Failed to load previous messages:', error);
+            this.logger.error('[SDKService] Failed to load previous messages:', error);
             return [];
         }
     }
@@ -179,7 +180,7 @@ class SDKService {
 
     isLoggedIn() {
         if(!this.sdk) return false;
-        console.log('[SDKService] User is logged in:', this.sdk.isLogin);
+        this.logger.log('[SDKService] User is logged in:', this.sdk.isLogin);
         return this.sdk?.isLogin || false;
     }
 }
