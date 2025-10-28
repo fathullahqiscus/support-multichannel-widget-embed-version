@@ -3,6 +3,15 @@
  * Follows Single Responsibility Principle
  */
 class ChatService {
+    /**
+     * SDK Configuration Delay
+     * The Qiscus SDK polls for configuration every 300ms internally.
+     * We need to wait for at least one polling cycle to ensure the SDK
+     * is fully configured before making API calls.
+     * @see https://github.com/qiscus/qiscus-sdk-web-core - SDK polling mechanism
+     */
+    static SDK_CONFIG_POLL_INTERVAL = 300;
+
     constructor(sdkService, apiService, stateManager, storageService, eventEmitter, logger) {
         this.sdkService = sdkService;
         this.apiService = apiService;
@@ -219,8 +228,11 @@ class ChatService {
             // Set user with token and wait for completion
             await this.sdkService.setUserWithToken(user);
 
-            // Ensure SDK is fully ready before proceeding
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // Wait for SDK configuration polling cycle to complete
+            // The SDK polls for config every 300ms internally, so we need to wait
+            // for at least one cycle to ensure the SDK is fully ready
+            this.logger.log('[ChatService] Waiting for SDK configuration...');
+            await new Promise(resolve => setTimeout(resolve, ChatService.SDK_CONFIG_POLL_INTERVAL));
 
             // Load room info with messages
             const [room, messages] = await this.updateRoomInfo(roomId);
