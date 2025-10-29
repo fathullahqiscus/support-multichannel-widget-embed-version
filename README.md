@@ -564,5 +564,3 @@ This project is licensed under the MIT License.
 5. **Deploy**: Follow production deployment guide above
 
 ---
-
-Made with ❤️ by Qiscus Team
