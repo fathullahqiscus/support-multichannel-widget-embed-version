@@ -1,6 +1,14 @@
 # Qiscus Multichannel Widget - Vanilla JavaScript
 
-A production-ready, SOLID-compliant customer support chat widget for websites. Built with vanilla JavaScript, no frameworks required.
+A lightweight, production-ready customer support chat widget built with vanilla JavaScript following SOLID principles.
+
+## ⚠️ Disclaimer / Penafian
+
+**English:**
+This is an **unofficial** open-source project. Any consequences or issues arising from the use of this project are **not the responsibility of Qiscus**. As this is open-source software, you are free to modify it as extensively as you wish.
+
+**Bahasa Indonesia:**
+Project ini bersifat **unofficial** artinya segala apapun akibat yang akan timbul **bukan tanggung jawab dari sisi Qiscus**, dan karena sifatnya open source boleh dimodifikasi semaksimal mungkin.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)](https://www.ecma-international.org/ecma-262/)

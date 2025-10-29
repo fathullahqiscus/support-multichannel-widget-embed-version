@@ -1,6 +1,16 @@
 # API Documentation
 
-This document describes the external APIs used by the React Native Multichannel Widget.
+## ⚠️ Disclaimer / Penafian
+
+**English:**
+This is an **unofficial** open-source project. Any consequences or issues arising from the use of this project are **not the responsibility of Qiscus**. As this is open-source software, you are free to modify it as extensively as you wish.
+
+**Bahasa Indonesia:**
+Project ini bersifat **unofficial** artinya segala apapun akibat yang akan timbul **bukan tanggung jawab dari sisi Qiscus**, dan karena sifatnya open source boleh dimodifikasi semaksimal mungkin.
+
+---
+
+This document describes the external APIs used by the Qiscus Multichannel Widget.
 
 ## Table of Contents
 

@@ -1,6 +1,20 @@
 /**
  * Qiscus Multichannel Widget - Refactored with SOLID Principles
  * 
+ * ⚠️ DISCLAIMER / PENAFIAN:
+ * 
+ * English:
+ * This is an UNOFFICIAL open-source project. Any consequences or issues arising 
+ * from the use of this project are NOT the responsibility of Qiscus. 
+ * As this is open-source software, you are free to modify it as extensively as you wish.
+ * 
+ * Bahasa Indonesia:
+ * Project ini bersifat UNOFFICIAL artinya segala apapun akibat yang akan timbul 
+ * BUKAN tanggung jawab dari sisi Qiscus, dan karena sifatnya open source 
+ * boleh dimodifikasi semaksimal mungkin.
+ * 
+ * ---
+ * 
  * SOLID Principles Applied:
  * - Single Responsibility: Each service has one clear purpose
  * - Open/Closed: Easy to extend with new services without modifying existing code
