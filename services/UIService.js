@@ -47,6 +47,9 @@ class UIService {
                 </div>
                 
                 <div class="qiscus-input-area">
+                    <button class="qiscus-attach-btn" id="qiscus-attach-btn" title="Attach file">
+                        📎
+                    </button>
                     <input 
                         type="text" 
                         id="qiscus-message-input" 
@@ -56,6 +59,23 @@ class UIService {
                     <button class="qiscus-send-btn" id="qiscus-send-btn">
                         <img src="https://cdn-icons-png.flaticon.com/128/3682/3682321.png" alt="Send" width="20" height="20" />
                     </button>
+                </div>
+                
+                <input 
+                    type="file" 
+                    id="qiscus-file-input" 
+                    style="display: none;" 
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+                />
+                
+                <div class="qiscus-upload-progress" id="qiscus-upload-progress" style="display: none;">
+                    <div class="qiscus-upload-info">
+                        <span id="qiscus-upload-filename">Uploading...</span>
+                        <span id="qiscus-upload-percent">0%</span>
+                    </div>
+                    <div class="qiscus-progress-bar">
+                        <div class="qiscus-progress-fill" id="qiscus-progress-fill"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -276,6 +296,106 @@ class UIService {
                 cursor: not-allowed;
             }
             
+            .qiscus-attach-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: #f5f5f5;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                transition: background 0.2s ease;
+            }
+            
+            .qiscus-attach-btn:hover {
+                background: #e0e0e0;
+            }
+            
+            .qiscus-upload-progress {
+                padding: 12px 16px;
+                background: #f5f5f5;
+                border-top: 1px solid #e0e0e0;
+            }
+            
+            .qiscus-upload-info {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-size: 13px;
+                color: #666;
+            }
+            
+            .qiscus-progress-bar {
+                width: 100%;
+                height: 4px;
+                background: #e0e0e0;
+                border-radius: 2px;
+                overflow: hidden;
+            }
+            
+            .qiscus-progress-fill {
+                height: 100%;
+                background: ${this.theme.primaryColor};
+                width: 0%;
+                transition: width 0.3s ease;
+            }
+            
+            .media-message {
+                margin: 8px 0;
+            }
+            
+            .media-message img,
+            .media-message video {
+                max-width: 300px;
+                max-height: 300px;
+                border-radius: 8px;
+                cursor: pointer;
+                display: block;
+            }
+            
+            .media-message .file-name {
+                font-size: 12px;
+                color: #666;
+                margin-top: 4px;
+            }
+            
+            .media-message .file-link {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px;
+                background: #f5f5f5;
+                border-radius: 8px;
+                text-decoration: none;
+                color: #333;
+                transition: background 0.2s ease;
+            }
+            
+            .media-message .file-link:hover {
+                background: #e0e0e0;
+            }
+            
+            .media-message .file-icon {
+                font-size: 32px;
+            }
+            
+            .media-message .file-info {
+                flex: 1;
+            }
+            
+            .media-message .file-info .file-name {
+                font-weight: 500;
+                margin-bottom: 4px;
+            }
+            
+            .media-message .file-info .file-size {
+                font-size: 12px;
+                color: #999;
+            }
+            
             @media (max-width: 480px) {
                 .qiscus-chat-window {
                     width: calc(100vw - 40px);
@@ -308,6 +428,22 @@ class UIService {
                 this.eventEmitter.emit('ui:sendClick');
             }
         });
+
+        // Attach button event
+        const attachBtn = document.getElementById('qiscus-attach-btn');
+        attachBtn?.addEventListener('click', () => {
+            const fileInput = document.getElementById('qiscus-file-input');
+            fileInput?.click();
+        });
+
+        // File input change event
+        const fileInput = document.getElementById('qiscus-file-input');
+        fileInput?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.eventEmitter.emit('ui:fileSelected', file);
+            }
+        });
     }
 
     openWidget() {
@@ -328,21 +464,10 @@ class UIService {
             return;
         }
 
-        console.log('[UIService] Rendering messages. Current user email:', currentUserEmail);
-        
         messagesContainer.innerHTML = messages.map(msg => {
             // Check if message is from customer (current user) using user_extras
             const isCustomer = msg.user_extras?.is_customer === true;
             const isOwn = isCustomer;
-            
-            console.log('[UIService] Message:', {
-                message: msg.message,
-                email: msg.email,
-                username: msg.username,
-                user_extras: msg.user_extras,
-                is_customer: isCustomer,
-                isOwn: isOwn
-            });
             
             const time = new Date(msg.timestamp).toLocaleTimeString('en-US', { 
                 hour: '2-digit', 
@@ -351,10 +476,13 @@ class UIService {
             
             const senderName = isOwn ? 'You' : (msg.username || 'Customer Service');
 
+            // Check if message is a media message
+            const mediaContent = this.renderMediaContent(msg);
+
             return `
                 <div class="qiscus-message ${isOwn ? 'right' : 'left'}">
                     ${!isOwn ? `<div class="qiscus-message-sender">${this.escapeHtml(senderName)}</div>` : ''}
-                    <div class="qiscus-message-bubble">${this.escapeHtml(msg.message)}</div>
+                    ${mediaContent ? mediaContent : `<div class="qiscus-message-bubble">${this.escapeHtml(msg.message)}</div>`}
                     <div class="qiscus-message-time">${time}</div>
                 </div>
             `;
@@ -400,5 +528,133 @@ class UIService {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * Render media content for custom messages
+     * @param {Object} message - Message object
+     * @returns {string|null} - HTML string or null
+     */
+    renderMediaContent(message) {
+        if (message.type !== 'custom' || !message.payload) return null;
+
+        try {
+            const payload = typeof message.payload === 'string' 
+                ? JSON.parse(message.payload) 
+                : message.payload;
+            
+            const content = payload.content;
+
+            if (!content || !content.url) {
+                return null;
+            }
+
+            if (payload.type === 'image') {
+                return `
+                    <div class="qiscus-message-bubble">
+                        <div class="media-message">
+                            <img src="${content.url}" 
+                                 alt="${content.file_name || 'Image'}" 
+                                 onclick="window.open('${content.url}', '_blank')"
+                                 style="max-width: 250px; max-height: 250px; border-radius: 8px; cursor: pointer;">
+                            ${content.file_name ? `<div class="file-name">${this.escapeHtml(content.file_name)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (payload.type === 'video') {
+                return `
+                    <div class="qiscus-message-bubble">
+                        <div class="media-message">
+                            <video controls style="max-width: 250px; max-height: 250px; border-radius: 8px;">
+                                <source src="${content.url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            ${content.file_name ? `<div class="file-name">${this.escapeHtml(content.file_name)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const fileSize = content.size ? this.formatFileSize(content.size) : 'File';
+                const fileIcon = this.getFileIcon(content.file_name);
+                
+                return `
+                    <div class="qiscus-message-bubble">
+                        <div class="media-message">
+                            <a href="${content.url}" target="_blank" class="file-link">
+                                <span class="file-icon">${fileIcon}</span>
+                                <div class="file-info">
+                                    <div class="file-name">${this.escapeHtml(content.file_name)}</div>
+                                    <div class="file-size">${fileSize}</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error('[UIService] Error rendering media:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Get file icon emoji
+     */
+    getFileIcon(filename) {
+        if (!filename) return '📎';
+        
+        const ext = filename.split('.').pop().toLowerCase();
+        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+        const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
+        const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+        
+        if (imageExts.includes(ext)) return '🖼️';
+        if (videoExts.includes(ext)) return '🎥';
+        if (docExts.includes(ext)) return '📄';
+        return '📎';
+    }
+
+    /**
+     * Format file size
+     */
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    /**
+     * Show upload progress
+     */
+    showUploadProgress(filename, percent) {
+        const progressDiv = document.getElementById('qiscus-upload-progress');
+        const filenameSpan = document.getElementById('qiscus-upload-filename');
+        const percentSpan = document.getElementById('qiscus-upload-percent');
+        const progressFill = document.getElementById('qiscus-progress-fill');
+
+        if (progressDiv && filenameSpan && percentSpan && progressFill) {
+            progressDiv.style.display = 'block';
+            filenameSpan.textContent = filename;
+            percentSpan.textContent = percent + '%';
+            progressFill.style.width = percent + '%';
+        }
+    }
+
+    /**
+     * Hide upload progress
+     */
+    hideUploadProgress() {
+        const progressDiv = document.getElementById('qiscus-upload-progress');
+        if (progressDiv) {
+            progressDiv.style.display = 'none';
+        }
+
+        // Clear file input
+        const fileInput = document.getElementById('qiscus-file-input');
+        if (fileInput) {
+            fileInput.value = '';
+        }
     }
 }

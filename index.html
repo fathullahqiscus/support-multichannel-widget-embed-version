@@ -88,6 +88,19 @@
     </div>
 
     <div class="demo-section">
+        <h2>Media Upload</h2>
+        <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx" style="margin: 10px 0;">
+        <button onclick="uploadMedia()">Upload & Send Media</button>
+        <div id="uploadProgress" style="display: none; margin-top: 10px;">
+            <p>Uploading: <span id="uploadFileName"></span></p>
+            <div style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                <div id="progressFill" style="height: 100%; background: #55B29A; width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <p><span id="progressPercent">0</span>%</p>
+        </div>
+    </div>
+
+    <div class="demo-section">
         <h2>Event Log</h2>
         <div id="log" style="background: white; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
     </div>
@@ -117,9 +130,10 @@
         function initWidget() {
             try {
                 widget = new QiscusMultichannelWidget({
-                    appId: 'your-app-id', // Replace with your actual App ID
+                    appId: 'ramo-29lun8b1ulepsaio', // Replace with your actual App ID
                     channelId: '127590', // Optional
                     primaryColor: '#55B29A',
+                    debugMode: true,
                     onReady: (w) => {
                         log('Widget ready!', 'success');
                     },
@@ -152,6 +166,9 @@
                         department: 'Support'
                     }
                 });
+
+                // Setup media event listeners
+                setupMediaEvents();
 
                 log('Widget initialized successfully', 'success');
             } catch (error) {
@@ -208,6 +225,78 @@
             const state = widget.getState();
             console.log('Current State:', state);
             log('State logged to console (F12)', 'success');
+        }
+
+        // Media upload function
+        async function uploadMedia() {
+            if (!widget) {
+                log('Please initialize widget first', 'error');
+                return;
+            }
+
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                log('Please select a file first', 'error');
+                return;
+            }
+
+            const roomId = widget.stateManager.get('roomId');
+            if (!roomId) {
+                log('No active room. Please start chat first.', 'error');
+                return;
+            }
+
+            try {
+                log(`📤 Preparing to upload: ${file.name}`, 'info');
+
+                // Prepare and validate file
+                const mediaOrDocs = widget.chatService.prepareFileForUpload(file);
+
+                // Upload and send
+                await widget.chatService.uploadAndSendMedia(mediaOrDocs, roomId);
+
+                log(`✅ Media sent successfully: ${file.name}`, 'success');
+                fileInput.value = ''; // Clear input
+
+            } catch (error) {
+                log(`❌ Upload error: ${error.message}`, 'error');
+            }
+        }
+
+        // Setup media event listeners
+        function setupMediaEvents() {
+            if (!widget || !widget.eventEmitter) return;
+
+            // Listen for upload progress
+            widget.eventEmitter.on('media:progress', (data) => {
+                const progressDiv = document.getElementById('uploadProgress');
+                const fileNameSpan = document.getElementById('uploadFileName');
+                const progressFill = document.getElementById('progressFill');
+                const progressPercent = document.getElementById('progressPercent');
+
+                progressDiv.style.display = 'block';
+                fileNameSpan.textContent = data.filename;
+                progressFill.style.width = data.percent + '%';
+                progressPercent.textContent = data.percent;
+
+                log(`Upload progress: ${data.percent}%`, 'info');
+            });
+
+            // Listen for upload complete
+            widget.eventEmitter.on('media:uploaded', (data) => {
+                const progressDiv = document.getElementById('uploadProgress');
+                progressDiv.style.display = 'none';
+                log('Media uploaded successfully!', data);
+            });
+
+            // Listen for upload error
+            widget.eventEmitter.on('media:error', (data) => {
+                const progressDiv = document.getElementById('uploadProgress');
+                progressDiv.style.display = 'none';
+                log(`Media upload failed: ${data.error.message}`, 'error');
+            });
         }
 
         // Auto-initialize on page load

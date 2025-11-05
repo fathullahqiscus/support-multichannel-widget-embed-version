@@ -155,6 +155,23 @@ class QiscusMultichannelWidget {
         this.eventEmitter.on('ui:sendClick', () => {
             this.handleSendMessage();
         });
+
+        this.eventEmitter.on('ui:fileSelected', (file) => {
+            this.handleFileUpload(file);
+        });
+
+        // Media events
+        this.eventEmitter.on('media:progress', (data) => {
+            this.uiService.showUploadProgress(data.filename, data.percent);
+        });
+
+        this.eventEmitter.on('media:uploaded', () => {
+            this.uiService.hideUploadProgress();
+        });
+
+        this.eventEmitter.on('media:error', () => {
+            this.uiService.hideUploadProgress();
+        });
     }
 
     async initialize() {
@@ -340,6 +357,33 @@ class QiscusMultichannelWidget {
             this.uiService.clearMessageInput();
         } catch (error) {
             this.logger.error('[QiscusWidget] Send message failed:', error);
+        }
+    }
+
+    async handleFileUpload(file) {
+        const roomId = this.stateManager.get('roomId');
+        
+        if (!roomId) {
+            this.logger.error('[QiscusWidget] No active room for file upload');
+            this.eventEmitter.emit('media:error', { 
+                error: new Error('No active room. Please start a chat first.') 
+            });
+            return;
+        }
+
+        try {
+            this.logger.log('[QiscusWidget] 📤 Uploading file:', file.name);
+            
+            // Prepare and validate file
+            const mediaOrDocs = this.chatService.prepareFileForUpload(file);
+            
+            // Upload and send
+            await this.chatService.uploadAndSendMedia(mediaOrDocs, roomId);
+            
+            this.logger.log('[QiscusWidget] ✅ File uploaded successfully');
+        } catch (error) {
+            this.logger.error('[QiscusWidget] ❌ File upload failed:', error);
+            // Error event already emitted by ChatService
         }
     }
 

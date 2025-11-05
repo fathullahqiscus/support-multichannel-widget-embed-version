@@ -321,18 +321,27 @@ class ChatService {
         }
     }
 
+    /**
+     * Send text message
+     * @param {string} text - Message text
+     * @param {Object} extras - Extra parameters
+     * @returns {Promise<Object>} - Sent message
+     */
     async sendMessage(text, extras = {}) {
-        if (!text || !text.trim()) {
-            throw new Error('Message text cannot be empty');
-        }
-
         const roomId = this.stateManager.get('roomId');
         if (!roomId) {
             throw new Error('No active room');
         }
 
+        if (!text || !text.trim()) {
+            throw new Error('Message text cannot be empty');
+        }
+
         try {
+            this.logger.log('[ChatService] Sending text message:', text);
+
             const message = await this.sdkService.sendMessage(roomId, text, extras);
+
             this.stateManager.addMessage(message);
             this.eventEmitter.emit('message:sent', message);
             return message;
@@ -397,5 +406,224 @@ class ChatService {
         this.storageService.clearSession();
         this.stateManager.reset();
         this.eventEmitter.emit('session:cleared');
+    }
+
+    // ==================== MEDIA UPLOAD METHODS ====================
+
+    /**
+     * Get file extension from filename
+     */
+    getFileExtension(filename) {
+        return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+    }
+
+    /**
+     * Check if file is an image
+     */
+    isImageFile(filename) {
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+        const ext = this.getFileExtension(filename).toLowerCase();
+        return imageExtensions.includes(ext);
+    }
+
+    /**
+     * Check if file is a video
+     */
+    isVideoFile(filename) {
+        const videoExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv'];
+        const ext = this.getFileExtension(filename).toLowerCase();
+        return videoExtensions.includes(ext);
+    }
+
+    /**
+     * Check if file is a document
+     */
+    isDocumentFile(filename) {
+        const docExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv'];
+        const ext = this.getFileExtension(filename).toLowerCase();
+        return docExtensions.includes(ext);
+    }
+
+    /**
+     * Get media type for message
+     */
+    getMediaType(filename) {
+        if (this.isImageFile(filename)) return 'image';
+        if (this.isVideoFile(filename)) return 'video';
+        return 'file';
+    }
+
+    /**
+     * Prepare temporary message for file upload
+     */
+    prepareFileMessage(filename, uri) {
+        return {
+            message: `File attachment: ${filename}`,
+            uniqueId: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date(),
+            type: 'file',
+            uri: uri,
+            filename: filename,
+            status: 'pending'
+        };
+    }
+
+    /**
+     * Validate file before upload
+     * @param {File} file - File object
+     * @returns {Object} - Validation result { valid: boolean, error: string }
+     */
+    validateFile(file) {
+        const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+        const ALLOWED_EXTENSIONS = [
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', // Images
+            'mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', // Videos
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv' // Documents
+        ];
+
+        if (!file) {
+            return { valid: false, error: 'No file provided' };
+        }
+
+        if (!file.name) {
+            return { valid: false, error: 'File name is missing' };
+        }
+
+        const ext = this.getFileExtension(file.name).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
+            return { valid: false, error: `File type .${ext} is not supported` };
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            return { valid: false, error: `File size exceeds 25MB limit (${Math.round(file.size / 1024 / 1024)}MB)` };
+        }
+
+        return { valid: true };
+    }
+
+    /**
+     * Prepare file object from File input
+     * @param {File} file - File from input element
+     * @returns {Object} - File object ready for upload
+     */
+    prepareFileForUpload(file) {
+        // Validate file first
+        const validation = this.validateFile(file);
+        if (!validation.valid) {
+            throw new Error(validation.error);
+        }
+
+        return {
+            uri: file,
+            type: file.type,
+            name: file.name,
+            size: file.size
+        };
+    }
+
+    /**
+     * Upload and send media file
+     * Complete flow: validate → upload → send message
+     * @param {Object} mediaOrDocs - File object { uri: File, type, name, size }
+     * @param {number} roomId - Room ID
+     * @returns {Promise<Object>} - Sent message
+     */
+    async uploadAndSendMedia(mediaOrDocs, roomId) {
+        // === VALIDATION ===
+        if (!this.sdkService.sdk) throw new Error('SDK not initialized');
+        if (!roomId) throw new Error('Room ID is required');
+        if (!mediaOrDocs?.uri) throw new Error('Invalid file object');
+        if (!mediaOrDocs.name) throw new Error('File name is required');
+
+        this.logger.log('[ChatService] 📤 Starting media upload:', mediaOrDocs.name);
+
+        // Prepare temp message for UI tracking
+        const tempMessage = this.prepareFileMessage(mediaOrDocs.name, mediaOrDocs.uri);
+        this.eventEmitter.emit('media:uploading', { message: tempMessage, file: mediaOrDocs });
+
+        try {
+            // === STEP 1: Upload file to Qiscus CDN ===
+            this.logger.log('[ChatService] ⬆️  Uploading to CDN...');
+            const fileURL = await this.uploadFile(mediaOrDocs);
+            
+            if (!fileURL) throw new Error('Upload failed: No URL returned');
+            this.logger.log('[ChatService] ✅ File uploaded:', fileURL);
+
+            // === STEP 2: Send message with file URL ===
+            this.logger.log('[ChatService] 💬 Sending message...');
+            const sentMessage = await this.sendMediaMessage(roomId, mediaOrDocs, fileURL, tempMessage);
+            this.logger.log('[ChatService] ✅ Message sent successfully');
+
+            // Emit success
+            this.eventEmitter.emit('media:uploaded', { message: sentMessage, fileURL });
+            return sentMessage;
+            
+        } catch (error) {
+            this.logger.error('[ChatService] ❌ Upload failed:', error);
+            this.eventEmitter.emit('media:error', { message: tempMessage, error });
+            throw error;
+        }
+    }
+
+    /**
+     * Upload file to Qiscus CDN
+     * @param {Object} mediaOrDocs - File object { uri: File, name, size }
+     * @returns {Promise<string>} - Uploaded file URL
+     */
+    uploadFile(mediaOrDocs) {
+        return new Promise((resolve, reject) => {
+            // SDK upload expects just the File object
+            this.sdkService.sdk.upload(mediaOrDocs.uri, (error, progress, fileURL) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                // Progress callback
+                if (progress) {
+                    const percent = Math.round(progress.percent);
+                    this.eventEmitter.emit('media:progress', {
+                        filename: mediaOrDocs.name,
+                        percent: percent
+                    });
+                }
+
+                // Success callback
+                if (fileURL) {
+                    resolve(fileURL);
+                }
+            });
+        });
+    }
+
+    /**
+     * Send media message using SDK's official method
+     * @param {number} roomId - Room ID
+     * @param {Object} mediaOrDocs - File object { name, size }
+     * @param {string} fileURL - Uploaded file URL from CDN
+     * @param {Object} tempMessage - Temp message { message, uniqueId }
+     * @returns {Promise<Object>} - Sent message
+     */
+    async sendMediaMessage(roomId, mediaOrDocs, fileURL, tempMessage) {
+        // Generate file attachment message using SDK's official method
+        const message = this.sdkService.sdk.generateFileAttachmentMessage({
+            roomId: roomId,
+            text: tempMessage.message, // e.g., "File attachment: image.png"
+            url: fileURL,              // CDN URL
+            filename: mediaOrDocs.name,
+            size: mediaOrDocs.size || 0,
+            caption: '',
+            extras: {}
+        });
+
+        // Send using SDK's sendComment with generated message properties
+        return this.sdkService.sdk.sendComment(
+            message.room_id,
+            message.message,
+            message.unique_id,
+            message.type,
+            message.payload,
+            message.extras
+        );
     }
 }
