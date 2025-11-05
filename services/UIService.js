@@ -531,37 +531,43 @@ class UIService {
     }
 
     /**
-     * Render media content for custom messages
+     * Render media content for custom messages and file attachment messages
      * @param {Object} message - Message object
      * @returns {string|null} - HTML string or null
      */
     renderMediaContent(message) {
-        if (message.type !== 'custom' || !message.payload) return null;
+        if (message.type !== 'custom' && message.type !== 'file_attachment' || !message.payload) return null;
 
         try {
             const payload = typeof message.payload === 'string' 
                 ? JSON.parse(message.payload) 
                 : message.payload;
             
-            const content = payload.content;
+            // Handle both custom type (with content wrapper) and file_attachment type (direct payload)
+            const content = payload.content || payload;
 
             if (!content || !content.url) {
                 return null;
             }
 
-            if (payload.type === 'image') {
+            // Determine file type from extension if not provided
+            const fileName = content.file_name || content.filename || '';
+            const fileType = this.getFileTypeFromExtension(fileName);
+            const mediaType = payload.type || fileType;
+
+            if (mediaType === 'image') {
                 return `
                     <div class="qiscus-message-bubble">
                         <div class="media-message">
                             <img src="${content.url}" 
-                                 alt="${content.file_name || 'Image'}" 
+                                 alt="${fileName || 'Image'}" 
                                  onclick="window.open('${content.url}', '_blank')"
                                  style="max-width: 250px; max-height: 250px; border-radius: 8px; cursor: pointer;">
-                            ${content.file_name ? `<div class="file-name">${this.escapeHtml(content.file_name)}</div>` : ''}
+                            ${fileName ? `<div class="file-name">${this.escapeHtml(fileName)}</div>` : ''}
                         </div>
                     </div>
                 `;
-            } else if (payload.type === 'video') {
+            } else if (mediaType === 'video') {
                 return `
                     <div class="qiscus-message-bubble">
                         <div class="media-message">
@@ -569,13 +575,13 @@ class UIService {
                                 <source src="${content.url}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
-                            ${content.file_name ? `<div class="file-name">${this.escapeHtml(content.file_name)}</div>` : ''}
+                            ${fileName ? `<div class="file-name">${this.escapeHtml(fileName)}</div>` : ''}
                         </div>
                     </div>
                 `;
             } else {
                 const fileSize = content.size ? this.formatFileSize(content.size) : 'File';
-                const fileIcon = this.getFileIcon(content.file_name);
+                const fileIcon = this.getFileIcon(fileName);
                 
                 return `
                     <div class="qiscus-message-bubble">
@@ -583,7 +589,7 @@ class UIService {
                             <a href="${content.url}" target="_blank" class="file-link">
                                 <span class="file-icon">${fileIcon}</span>
                                 <div class="file-info">
-                                    <div class="file-name">${this.escapeHtml(content.file_name)}</div>
+                                    <div class="file-name">${this.escapeHtml(fileName)}</div>
                                     <div class="file-size">${fileSize}</div>
                                 </div>
                             </a>
@@ -595,6 +601,24 @@ class UIService {
             console.error('[UIService] Error rendering media:', e);
             return null;
         }
+    }
+
+    /**
+     * Get file type from extension
+     * @param {string} filename - File name
+     * @returns {string} - File type (image, video, or file)
+     */
+    getFileTypeFromExtension(filename) {
+        if (!filename) return 'file';
+        
+        const ext = filename.split('.').pop().toLowerCase();
+        
+        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+        const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv'];
+        
+        if (imageExts.includes(ext)) return 'image';
+        if (videoExts.includes(ext)) return 'video';
+        return 'file';
     }
 
     /**
