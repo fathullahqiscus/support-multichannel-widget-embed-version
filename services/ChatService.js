@@ -552,6 +552,7 @@ class ChatService {
             // === STEP 2: Send message with file URL ===
             this.logger.log('[ChatService] 💬 Sending message...');
             const sentMessage = await this.sendMediaMessage(roomId, mediaOrDocs, fileURL, tempMessage);
+            this.stateManager.addMessage(sentMessage);
             this.logger.log('[ChatService] ✅ Message sent successfully');
 
             // Emit success
