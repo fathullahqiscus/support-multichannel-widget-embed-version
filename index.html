@@ -1,308 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qiscus Widget - SOLID Refactored Example</title>
-    <!-- 
-    ⚠️ DISCLAIMER / PENAFIAN:
-    
-    English:
-    This is an UNOFFICIAL open-source project. Any consequences or issues arising 
-    from the use of this project are NOT the responsibility of Qiscus. 
-    As this is open-source software, you are free to modify it as extensively as you wish.
-    
-    Bahasa Indonesia:
-    Project ini bersifat UNOFFICIAL artinya segala apapun akibat yang akan timbul 
-    BUKAN tanggung jawab dari sisi Qiscus, dan karena sifatnya open source 
-    boleh dimodifikasi semaksimal mungkin.
-    -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .demo-section {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        button {
-            background: #55B29A;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        .info {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        code {
-            background: #f5f5f5;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qiscus Chat Widget</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/qiscus-sdk-core"></script>
+  <!-- Google Fonts for premium look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <h1>Qiscus Multichannel Widget - SOLID Refactored</h1>
-    
-    <div class="info" style="background: #fff3cd; border-left: 4px solid #ff9800;">
-        <h3>⚠️ Disclaimer / Penafian</h3>
-        <p><strong>English:</strong><br>
-        This is an <strong>unofficial</strong> open-source project. Any consequences or issues arising from the use of this project are <strong>not the responsibility of Qiscus</strong>. As this is open-source software, you are free to modify it as extensively as you wish.</p>
-        <p><strong>Bahasa Indonesia:</strong><br>
-        Project ini bersifat <strong>unofficial</strong> artinya segala apapun akibat yang akan timbul <strong>bukan tanggung jawab dari sisi Qiscus</strong>, dan karena sifatnya open source boleh dimodifikasi semaksimal mungkin.</p>
-    </div>
-    
-    <div class="info">
-        <h3>Architecture Improvements</h3>
-        <ul>
-            <li><strong>Single Responsibility:</strong> Each service handles one concern</li>
-            <li><strong>Open/Closed:</strong> Easy to extend without modifying existing code</li>
-            <li><strong>Dependency Inversion:</strong> Services are injected, not hardcoded</li>
-            <li><strong>Better Testability:</strong> Services can be mocked and tested independently</li>
-            <li><strong>Maintainability:</strong> Clear separation makes debugging easier</li>
-        </ul>
-    </div>
 
-    <div class="demo-section">
-        <h2>Demo Controls</h2>
-        <button onclick="initWidget()">Initialize Widget</button>
-        <button onclick="startChat()">Start Chat</button>
-        <button onclick="sendTestMessage()">Send Test Message</button>
-        <button onclick="clearSession()">Clear Session</button>
-        <button onclick="showState()">Show State</button>
-    </div>
+  <!-- Floating Action Button -->
+  <button class="fab" id="fab-chat" aria-label="Open chat">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </button>
 
-    <div class="demo-section">
-        <h2>Media Upload</h2>
-        <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx" style="margin: 10px 0;">
-        <button onclick="uploadMedia()">Upload & Send Media</button>
-        <div id="uploadProgress" style="display: none; margin-top: 10px;">
-            <p>Uploading: <span id="uploadFileName"></span></p>
-            <div style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
-                <div id="progressFill" style="height: 100%; background: #55B29A; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <p><span id="progressPercent">0</span>%</p>
+  <!-- Chat Widget Container -->
+  <div class="chat-widget hidden" id="chat-widget">
+    <header class="widget-header">
+      <button class="icon-btn hidden" id="btn-back" title="Back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <div class="header-info">
+        <h3 id="widget-title">Qiscus Chat</h3>
+        <small id="widget-subtitle" class="subtitle hidden"></small>
+      </div>
+      <button class="icon-btn" id="btn-close" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="widget-body">
+      <!-- VIEW: Login -->
+      <section id="view-login" class="view-section">
+        <div class="login-intro">
+          <h2>Welcome</h2>
+          <p>Please sign in to start chatting.</p>
         </div>
+        <form id="auth-form" class="stack">
+          <label>
+            <span>User ID</span>
+            <input type="text" name="userId" placeholder="user-1" required>
+          </label>
+          <label>
+            <span>Password / Key</span>
+            <input type="password" name="userKey" placeholder="secret" required>
+          </label>
+          <label>
+            <span>Display Name</span>
+            <input type="text" name="username" placeholder="User One">
+          </label>
+          <button type="submit" class="primary full-width">Start Chatting</button>
+        </form>
+      </section>
+
+      <!-- VIEW: Room List -->
+      <section id="view-room-list" class="view-section hidden">
+        <div class="list-controls">
+          <p class="section-title">Your Conversations</p>
+          <div class="controls-group">
+            <button id="btn-logout" class="icon-btn-small" title="Logout" style="margin-right: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+            <button id="rooms-refresh" class="icon-btn-small" title="Refresh">↻</button>
+          </div>
+        </div>
+        <div id="room-list" class="room-list">
+          <!-- Room items injected here -->
+        </div>
+        <!-- Simple pagination if needed -->
+        <div class="pagination-controls styled-pagination">
+          <button id="rooms-prev" disabled>←</button>
+          <span id="rooms-page">Page 1</span>
+          <button id="rooms-next">→</button>
+        </div>
+      </section>
+
+      <!-- VIEW: Chat -->
+      <section id="view-chat" class="view-section hidden">
+        <div id="message-list" class="message-list">
+          <!-- Messages injected here -->
+          <div class="placeholder">Select a room to start chatting</div>
+        </div>
+
+        <div class="typing-indicator hidden" id="typing-bar"></div>
+
+        <form id="message-form" class="chat-footer">
+          <div class="input-wrapper">
+            <input type="text" name="message" placeholder="Type a message..." autocomplete="off">
+            <button type="button" class="icon-btn" id="btn-upload" title="Upload File">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                </path>
+              </svg>
+            </button>
+          </div>
+          <button type="submit" class="send-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Hidden file input triggered by btn-upload -->
+        <form id="file-form" class="hidden">
+          <input type="file" name="file" id="file-input">
+        </form>
+      </section>
     </div>
+  </div>
 
-    <div class="demo-section">
-        <h2>Event Log</h2>
-        <div id="log" style="background: white; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
-    </div>
-
-    <!-- Load all service modules -->
-    <script src="services/EventEmitter.js"></script>
-    <script src="services/LoggerService.js"></script>
-    <script src="services/StorageService.js"></script>
-    <script src="services/SDKService.js"></script>
-    <script src="services/APIService.js"></script>
-    <script src="services/StateManager.js"></script>
-    <script src="services/UIService.js"></script>
-    <script src="services/ChatService.js"></script>
-    <script src="qiscus-widget.js"></script>
-
-    <script>
-        let widget;
-
-        function log(message, type = 'info') {
-            const logDiv = document.getElementById('log');
-            const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
-            logDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
-
-        function initWidget() {
-            try {
-                widget = new QiscusMultichannelWidget({
-                    appId: 'ramo-29lun8b1ulepsaio', // Replace with your actual App ID
-                    channelId: '127590', // Optional
-                    primaryColor: '#55B29A',
-                    debugMode: true,
-                    onReady: (w) => {
-                        log('Widget ready!', 'success');
-                    },
-                    onLoginSuccess: (user) => {
-                        log(`Login success: ${user.username}`, 'success');
-                    },
-                    onLoginError: (error) => {
-                        log(`Login error: ${error.message}`, 'error');
-                    },
-                    onMessageReceived: (message) => {
-                        log(`Message received: ${message.message}`);
-                    },
-                    onMessageSent: (message) => {
-                        log(`Message sent: ${message.message}`, 'success');
-                    },
-                    onRoomChanged: (room) => {
-                        log(`Room changed: ${room}`);
-                    },
-                    onTyping: (data) => {
-                        log(`Typing: ${data.typing}`);
-                    }
-                });
-
-                // Set user information
-                widget.setUser({
-                    userId: 'user-' + Date.now(),
-                    displayName: 'Demo User',
-                    avatarUrl: 'https://ui-avatars.com/api/?name=Demo+User',
-                    userProperties: {
-                        department: 'Support'
-                    }
-                });
-
-                // Setup media event listeners
-                setupMediaEvents();
-
-                log('Widget initialized successfully', 'success');
-            } catch (error) {
-                log(`Initialization error: ${error.message}`, 'error');
-            }
-        }
-
-        function startChat() {
-            if (!widget) {
-                log('Please initialize widget first', 'error');
-                return;
-            }
-
-            widget.initiateChat()
-                .then(() => {
-                    log('Chat initiated successfully', 'success');
-                })
-                .catch(error => {
-                    log(`Chat initiation error: ${error.message}`, 'error');
-                });
-        }
-
-        function sendTestMessage() {
-            if (!widget) {
-                log('Please initialize widget first', 'error');
-                return;
-            }
-
-            widget.sendMessage('Hello from SOLID refactored widget!')
-                .then(() => {
-                    log('Test message sent', 'success');
-                })
-                .catch(error => {
-                    log(`Send message error: ${error.message}`, 'error');
-                });
-        }
-
-        function clearSession() {
-            if (!widget) {
-                log('Please initialize widget first', 'error');
-                return;
-            }
-
-            widget.clearUser();
-            log('Session cleared', 'success');
-        }
-
-        function showState() {
-            if (!widget) {
-                log('Please initialize widget first', 'error');
-                return;
-            }
-
-            const state = widget.getState();
-            console.log('Current State:', state);
-            log('State logged to console (F12)', 'success');
-        }
-
-        // Media upload function
-        async function uploadMedia() {
-            if (!widget) {
-                log('Please initialize widget first', 'error');
-                return;
-            }
-
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                log('Please select a file first', 'error');
-                return;
-            }
-
-            const roomId = widget.stateManager.get('roomId');
-            if (!roomId) {
-                log('No active room. Please start chat first.', 'error');
-                return;
-            }
-
-            try {
-                log(`📤 Preparing to upload: ${file.name}`, 'info');
-
-                // Prepare and validate file
-                const mediaOrDocs = widget.chatService.prepareFileForUpload(file);
-
-                // Upload and send
-                await widget.chatService.uploadAndSendMedia(mediaOrDocs, roomId);
-
-                log(`✅ Media sent successfully: ${file.name}`, 'success');
-                fileInput.value = ''; // Clear input
-
-            } catch (error) {
-                log(`❌ Upload error: ${error.message}`, 'error');
-            }
-        }
-
-        // Setup media event listeners
-        function setupMediaEvents() {
-            if (!widget || !widget.eventEmitter) return;
-
-            // Listen for upload progress
-            widget.eventEmitter.on('media:progress', (data) => {
-                const progressDiv = document.getElementById('uploadProgress');
-                const fileNameSpan = document.getElementById('uploadFileName');
-                const progressFill = document.getElementById('progressFill');
-                const progressPercent = document.getElementById('progressPercent');
-
-                progressDiv.style.display = 'block';
-                fileNameSpan.textContent = data.filename;
-                progressFill.style.width = data.percent + '%';
-                progressPercent.textContent = data.percent;
-
-                log(`Upload progress: ${data.percent}%`, 'info');
-            });
-
-            // Listen for upload complete
-            widget.eventEmitter.on('media:uploaded', (data) => {
-                const progressDiv = document.getElementById('uploadProgress');
-                progressDiv.style.display = 'none';
-                log('Media uploaded successfully!', data);
-            });
-
-            // Listen for upload error
-            widget.eventEmitter.on('media:error', (data) => {
-                const progressDiv = document.getElementById('uploadProgress');
-                progressDiv.style.display = 'none';
-                log(`Media upload failed: ${data.error.message}`, 'error');
-            });
-        }
-
-        // Auto-initialize on page load
-        window.addEventListener('load', () => {
-            log('Page loaded. Click "Initialize Widget" to start.');
-        });
-    </script>
+  <script src="app.js"></script>
 </body>
+
 </html>
