@@ -120,15 +120,6 @@
             transform: none;
         }
 
-        /* Login Page */
-        .login-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
         /* Main Page */
         .main-page {
             padding: 20px;
@@ -315,7 +306,10 @@
         }
 
         .setup-page.active,
-        .login-page.active,
+        .login-page.active {
+            display: flex;
+        }
+
         .main-page.active {
             display: block;
         }
@@ -338,15 +332,14 @@
             <form id="setup-form">
                 <div class="form-group">
                     <label for="app-id-input">App ID *</label>
-                    <input type="text" id="app-id-input" placeholder="ramo-29lun8b1ulepsaio"
-                        value="ramo-29lun8b1ulepsaio" required>
+                    <input type="text" id="app-id-input" placeholder="YOUR_APP_ID" value="" required>
                     <small>Dapatkan App ID dari Qiscus Dashboard</small>
                 </div>
 
                 <div class="form-group">
                     <label for="channel-id-input">Channel ID</label>
-                    <input type="text" id="channel-id-input" placeholder="127590" value="127590">
-                    <small>Opsional - Kosongkan jika tidak ada</small>
+                    <input type="text" id="channel-id-input" placeholder="0" value="0">
+                    <small>Opsional - Default 0</small>
                 </div>
 
                 <button type="submit" class="btn btn-primary">
