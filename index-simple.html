@@ -16,10 +16,122 @@
         body {
             font-family: 'Inter', sans-serif;
             background: #f5f7fa;
+        }
+
+        /* Setup Page */
+        .setup-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
 
-        .container {
+        .setup-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .setup-card h1 {
+            font-size: 28px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .setup-card p {
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+
+        /* Login Page */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #475569;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group small {
+            display: block;
+            color: #94a3b8;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Login Page */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Main Page */
+        .main-page {
+            padding: 20px;
             max-width: 1400px;
             margin: 0 auto;
         }
@@ -118,7 +230,7 @@
             margin-bottom: 20px;
         }
 
-        button {
+        .btn-secondary {
             padding: 10px 20px;
             border: none;
             border-radius: 8px;
@@ -127,23 +239,11 @@
             cursor: pointer;
             font-family: inherit;
             transition: all 0.2s;
-        }
-
-        button.primary {
-            background: #3b82f6;
-            color: white;
-        }
-
-        button.primary:hover {
-            background: #2563eb;
-        }
-
-        button.secondary {
             background: #f1f5f9;
             color: #475569;
         }
 
-        button.secondary:hover {
+        .btn-secondary:hover {
             background: #e2e8f0;
         }
 
@@ -207,6 +307,19 @@
             color: #64748b;
         }
 
+        /* Hide pages by default */
+        .setup-page,
+        .login-page,
+        .main-page {
+            display: none;
+        }
+
+        .setup-page.active,
+        .login-page.active,
+        .main-page.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -216,17 +329,76 @@
 </head>
 
 <body>
-    <div class="container">
+    <!-- Setup Page -->
+    <div class="setup-page active" id="setup-page">
+        <div class="setup-card">
+            <h1>🚀 Setup Qiscus Widget</h1>
+            <p>Masukkan App ID dan Channel ID untuk memulai</p>
+
+            <form id="setup-form">
+                <div class="form-group">
+                    <label for="app-id-input">App ID *</label>
+                    <input type="text" id="app-id-input" placeholder="ramo-29lun8b1ulepsaio"
+                        value="ramo-29lun8b1ulepsaio" required>
+                    <small>Dapatkan App ID dari Qiscus Dashboard</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="channel-id-input">Channel ID</label>
+                    <input type="text" id="channel-id-input" placeholder="127590" value="127590">
+                    <small>Opsional - Kosongkan jika tidak ada</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Lanjut ke Login →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div class="login-page" id="login-page">
+        <div class="setup-card">
+            <h1>👤 Login</h1>
+            <p>Masukkan informasi user untuk memulai chat</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="user-id-input">User ID *</label>
+                    <input type="text" id="user-id-input" placeholder="user@example.com" required>
+                    <small>Email atau ID unik user</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="display-name-input">Display Name *</label>
+                    <input type="text" id="display-name-input" placeholder="John Doe" required>
+                    <small>Nama yang akan ditampilkan di chat</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="avatar-url-input">Avatar URL</label>
+                    <input type="url" id="avatar-url-input" placeholder="https://ui-avatars.com/api/?name=John+Doe">
+                    <small>Opsional - URL gambar avatar</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Mulai Chat →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Page -->
+    <div class="main-page" id="main-page">
         <div class="header">
             <h1>📊 Qiscus SDK Config Monitor</h1>
             <p>Monitor dan lihat konfigurasi Qiscus Chat SDK secara real-time</p>
         </div>
 
         <div class="btn-group">
-            <button class="primary" onclick="initWidget()">Initialize Widget</button>
-            <button class="primary" onclick="startChat()">Start Chat</button>
-            <button class="secondary" onclick="refreshConfig()">🔄 Refresh Config</button>
-            <button class="secondary" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button class="btn-secondary" onclick="refreshConfig()">🔄 Refresh Config</button>
+            <button class="btn-secondary" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button class="btn-secondary" onclick="resetApp()">🔙 Reset & Logout</button>
         </div>
 
         <div class="grid">
@@ -308,11 +480,11 @@
                 <div id="app-config">
                     <div class="config-item">
                         <span class="config-label">App ID</span>
-                        <span class="config-value" id="app-id">-</span>
+                        <span class="config-value" id="app-id-display">-</span>
                     </div>
                     <div class="config-item">
                         <span class="config-label">Channel ID</span>
-                        <span class="config-value" id="channel-id">-</span>
+                        <span class="config-value" id="channel-id-display">-</span>
                     </div>
                     <div class="config-item">
                         <span class="config-label">Base URL</span>
@@ -354,6 +526,145 @@
 
     <script>
         let widget;
+        let appConfig = {};
+        let userConfig = {};
+
+        // Setup Form Handler
+        document.getElementById('setup-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            appConfig.appId = document.getElementById('app-id-input').value.trim();
+            appConfig.channelId = document.getElementById('channel-id-input').value.trim();
+
+            if (!appConfig.appId) {
+                alert('App ID harus diisi!');
+                return;
+            }
+
+            // Go to login page
+            showPage('login');
+        });
+
+        // Login Form Handler
+        document.getElementById('login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            userConfig.userId = document.getElementById('user-id-input').value.trim();
+            userConfig.displayName = document.getElementById('display-name-input').value.trim();
+            userConfig.avatarUrl = document.getElementById('avatar-url-input').value.trim();
+
+            if (!userConfig.userId || !userConfig.displayName) {
+                alert('User ID dan Display Name harus diisi!');
+                return;
+            }
+
+            // Generate avatar if not provided
+            if (!userConfig.avatarUrl) {
+                userConfig.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userConfig.displayName)}&background=3b82f6&color=fff`;
+            }
+
+            // Initialize widget and go to main page
+            initializeWidget();
+        });
+
+        function showPage(page) {
+            document.querySelectorAll('.setup-page, .login-page, .main-page').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            if (page === 'setup') {
+                document.getElementById('setup-page').classList.add('active');
+            } else if (page === 'login') {
+                document.getElementById('login-page').classList.add('active');
+            } else if (page === 'main') {
+                document.getElementById('main-page').classList.add('active');
+            }
+        }
+
+        function initializeWidget() {
+            try {
+                log('🚀 Initializing widget...', 'info');
+
+                widget = new QiscusMultichannelWidget({
+                    appId: appConfig.appId,
+                    channelId: appConfig.channelId || undefined,
+                    primaryColor: '#3b82f6',
+                    debugMode: true,
+                    onReady: (w) => {
+                        log('✅ Widget ready!', 'success');
+                        refreshConfig();
+                    },
+                    onLoginSuccess: (user) => {
+                        log(`✅ Login success: ${user.username}`, 'success');
+                        refreshConfig();
+                    },
+                    onLoginError: (error) => {
+                        log(`❌ Login error: ${error.message}`, 'error');
+                        refreshConfig();
+                    },
+                    onMessageReceived: (message) => {
+                        log(`📨 Message received`, 'info');
+                        refreshConfig();
+                    },
+                    onMessageSent: (message) => {
+                        log(`📤 Message sent`, 'success');
+                        refreshConfig();
+                    }
+                });
+
+                widget.setUser({
+                    userId: userConfig.userId,
+                    displayName: userConfig.displayName,
+                    avatarUrl: userConfig.avatarUrl,
+                    userProperties: {
+                        source: 'sdk-monitor'
+                    }
+                });
+
+                // Start chat automatically
+                widget.initiateChat()
+                    .then(() => {
+                        log('✅ Chat initiated successfully', 'success');
+                        showPage('main');
+                        refreshConfig();
+
+                        // Auto-refresh every 2 seconds
+                        setInterval(() => {
+                            if (widget) {
+                                updateSDKStatus();
+                                updateUserInfo();
+                                updateRoomInfo();
+                            }
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        log(`❌ Chat initiation error: ${error.message}`, 'error');
+                    });
+
+            } catch (error) {
+                log(`❌ Init error: ${error.message}`, 'error');
+            }
+        }
+
+        function resetApp() {
+            if (confirm('Reset aplikasi dan logout?')) {
+                if (widget) {
+                    widget.clearUser();
+                }
+                widget = null;
+                appConfig = {};
+                userConfig = {};
+
+                // Clear form inputs
+                document.getElementById('user-id-input').value = '';
+                document.getElementById('display-name-input').value = '';
+                document.getElementById('avatar-url-input').value = '';
+
+                clearLogs();
+                showPage('setup');
+                log('🔄 App reset', 'info');
+            }
+        }
 
         function log(message, type = 'info') {
             const logDiv = document.getElementById('log');
@@ -378,7 +689,6 @@
             const isInitialized = widget.sdkService?.isInitialized || false;
             const isLoggedIn = widget.sdkService?.isLoggedIn() || false;
 
-            // Update status badge
             const badge = document.getElementById('sdk-status-badge');
             if (isLoggedIn) {
                 badge.className = 'status-badge success';
@@ -391,7 +701,6 @@
                 badge.textContent = 'Not Initialized';
             }
 
-            // Update status values
             document.getElementById('sdk-loaded').textContent = isLoaded;
             document.getElementById('sdk-initialized').textContent = isInitialized;
             document.getElementById('sdk-logged-in').textContent = isLoggedIn;
@@ -433,8 +742,8 @@
 
             const config = widget.config;
 
-            document.getElementById('app-id').textContent = config?.appId || '-';
-            document.getElementById('channel-id').textContent = config?.channelId || '-';
+            document.getElementById('app-id-display').textContent = config?.appId || '-';
+            document.getElementById('channel-id-display').textContent = config?.channelId || '-';
             document.getElementById('base-url').textContent = config?.baseURL || '-';
             document.getElementById('primary-color').textContent = config?.theme?.primaryColor || '-';
         }
@@ -472,7 +781,6 @@
             updateRoomInfo();
             updateAppConfig();
 
-            // Show full config
             const fullConfig = {
                 sdk: {
                     loaded: !!window.QiscusSDKCore,
@@ -491,82 +799,6 @@
 
             log('Configuration refreshed', 'success');
         }
-
-        function initWidget() {
-            try {
-                widget = new QiscusMultichannelWidget({
-                    appId: 'ramo-29lun8b1ulepsaio',
-                    channelId: '127590',
-                    primaryColor: '#3b82f6',
-                    debugMode: true,
-                    onReady: (w) => {
-                        log('✅ Widget ready!', 'success');
-                        refreshConfig();
-                    },
-                    onLoginSuccess: (user) => {
-                        log(`✅ Login success: ${user.username}`, 'success');
-                        refreshConfig();
-                    },
-                    onLoginError: (error) => {
-                        log(`❌ Login error: ${error.message}`, 'error');
-                        refreshConfig();
-                    },
-                    onMessageReceived: (message) => {
-                        log(`📨 Message received`, 'info');
-                        refreshConfig();
-                    },
-                    onMessageSent: (message) => {
-                        log(`📤 Message sent`, 'success');
-                        refreshConfig();
-                    }
-                });
-
-                widget.setUser({
-                    userId: 'user-' + Date.now(),
-                    displayName: 'Demo User',
-                    avatarUrl: 'https://ui-avatars.com/api/?name=Demo+User',
-                    userProperties: {
-                        department: 'Support'
-                    }
-                });
-
-                log('✅ Widget initialized', 'success');
-                refreshConfig();
-
-                // Auto-refresh every 2 seconds
-                setInterval(() => {
-                    if (widget) {
-                        updateSDKStatus();
-                        updateUserInfo();
-                        updateRoomInfo();
-                    }
-                }, 2000);
-
-            } catch (error) {
-                log(`❌ Init error: ${error.message}`, 'error');
-            }
-        }
-
-        function startChat() {
-            if (!widget) {
-                log('❌ Please initialize widget first', 'error');
-                return;
-            }
-
-            widget.initiateChat()
-                .then(() => {
-                    log('✅ Chat initiated', 'success');
-                    refreshConfig();
-                })
-                .catch(error => {
-                    log(`❌ Chat error: ${error.message}`, 'error');
-                });
-        }
-
-        // Initial log
-        window.addEventListener('load', () => {
-            log('🌐 Page loaded. Click "Initialize Widget" to start.', 'info');
-        });
     </script>
 </body>
 
