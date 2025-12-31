@@ -527,7 +527,7 @@
             loadSavedConfig();
         });
 
-        function loadSavedConfig() {
+        async function loadSavedConfig() {
             const savedAppId = localStorage.getItem('qiscus_app_id');
             const savedChannelId = localStorage.getItem('qiscus_channel_id');
 
@@ -539,8 +539,12 @@
                 document.getElementById('app-id-input').value = savedAppId;
                 document.getElementById('channel-id-input').value = savedChannelId || '0';
 
-                // Skip to login page
                 log('✅ Config loaded from localStorage', 'success');
+
+                // Setup SDK with saved config
+                await setupQiscusSDK();
+
+                // Skip to login page
                 showPage('login');
             } else {
                 // Show setup page
@@ -554,8 +558,41 @@
             log('💾 Config saved to localStorage', 'success');
         }
 
+        async function setupQiscusSDK() {
+            try {
+                log('🔄 Setting up Qiscus SDK...', 'info');
+
+                // Create temporary widget just for SDK setup
+                const tempWidget = new QiscusMultichannelWidget({
+                    appId: appConfig.appId,
+                    channelId: appConfig.channelId || undefined,
+                    primaryColor: '#3b82f6',
+                    debugMode: true,
+                    onReady: () => {
+                        log('✅ Qiscus SDK setup complete!', 'success');
+                    }
+                });
+
+                // Load and initialize SDK
+                await tempWidget.sdkService.loadSDK();
+                log('✅ SDK loaded successfully', 'success');
+
+                await tempWidget.sdkService.initialize(appConfig.appId);
+                log('✅ SDK initialized with App ID: ' + appConfig.appId, 'success');
+
+                // Store for later use
+                widget = tempWidget;
+
+                return true;
+            } catch (error) {
+                log('❌ SDK setup error: ' + error.message, 'error');
+                alert('Gagal setup Qiscus SDK. Periksa App ID Anda!');
+                return false;
+            }
+        }
+
         // Setup Form Handler
-        document.getElementById('setup-form').addEventListener('submit', function (e) {
+        document.getElementById('setup-form').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             appConfig.appId = document.getElementById('app-id-input').value.trim();
@@ -569,8 +606,13 @@
             // Save to localStorage
             saveConfigToLocalStorage();
 
-            // Go to login page
-            showPage('login');
+            // Setup Qiscus SDK
+            const setupSuccess = await setupQiscusSDK();
+
+            if (setupSuccess) {
+                // Go to login page
+                showPage('login');
+            }
         });
 
         // Login Form Handler
@@ -611,35 +653,17 @@
 
         function initializeWidget() {
             try {
-                log('🚀 Initializing widget...', 'info');
+                log('🚀 Starting chat session...', 'info');
 
-                widget = new QiscusMultichannelWidget({
-                    appId: appConfig.appId,
-                    channelId: appConfig.channelId || undefined,
-                    primaryColor: '#3b82f6',
-                    debugMode: true,
-                    onReady: (w) => {
-                        log('✅ Widget ready!', 'success');
-                        refreshConfig();
-                    },
-                    onLoginSuccess: (user) => {
-                        log(`✅ Login success: ${user.username}`, 'success');
-                        refreshConfig();
-                    },
-                    onLoginError: (error) => {
-                        log(`❌ Login error: ${error.message}`, 'error');
-                        refreshConfig();
-                    },
-                    onMessageReceived: (message) => {
-                        log(`📨 Message received`, 'info');
-                        refreshConfig();
-                    },
-                    onMessageSent: (message) => {
-                        log(`📤 Message sent`, 'success');
-                        refreshConfig();
-                    }
-                });
+                // Widget already created in setupQiscusSDK()
+                if (!widget) {
+                    log('❌ Widget not initialized. Please go back to setup.', 'error');
+                    alert('Widget belum di-setup. Silakan kembali ke halaman setup.');
+                    showPage('setup');
+                    return;
+                }
 
+                // Set user information
                 widget.setUser({
                     userId: userConfig.userId,
                     displayName: userConfig.displayName,
@@ -648,6 +672,8 @@
                         source: 'sdk-monitor'
                     }
                 });
+
+                log('✅ User configured', 'success');
 
                 // Start chat automatically
                 widget.initiateChat()
@@ -667,10 +693,12 @@
                     })
                     .catch(error => {
                         log(`❌ Chat initiation error: ${error.message}`, 'error');
+                        alert('Gagal memulai chat: ' + error.message);
                     });
 
             } catch (error) {
                 log(`❌ Init error: ${error.message}`, 'error');
+                alert('Error: ' + error.message);
             }
         }
 
