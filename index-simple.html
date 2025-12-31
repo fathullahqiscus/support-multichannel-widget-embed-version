@@ -324,7 +324,7 @@
 
 <body>
     <!-- Setup Page -->
-    <div class="setup-page active" id="setup-page">
+    <div class="setup-page" id="setup-page">
         <div class="setup-card">
             <h1>🚀 Setup Qiscus Widget</h1>
             <p>Masukkan App ID dan Channel ID untuk memulai</p>
@@ -522,6 +522,38 @@
         let appConfig = {};
         let userConfig = {};
 
+        // Load saved config on page load
+        window.addEventListener('load', function () {
+            loadSavedConfig();
+        });
+
+        function loadSavedConfig() {
+            const savedAppId = localStorage.getItem('qiscus_app_id');
+            const savedChannelId = localStorage.getItem('qiscus_channel_id');
+
+            if (savedAppId) {
+                appConfig.appId = savedAppId;
+                appConfig.channelId = savedChannelId || '0';
+
+                // Auto-fill form
+                document.getElementById('app-id-input').value = savedAppId;
+                document.getElementById('channel-id-input').value = savedChannelId || '0';
+
+                // Skip to login page
+                log('✅ Config loaded from localStorage', 'success');
+                showPage('login');
+            } else {
+                // Show setup page
+                showPage('setup');
+            }
+        }
+
+        function saveConfigToLocalStorage() {
+            localStorage.setItem('qiscus_app_id', appConfig.appId);
+            localStorage.setItem('qiscus_channel_id', appConfig.channelId);
+            log('💾 Config saved to localStorage', 'success');
+        }
+
         // Setup Form Handler
         document.getElementById('setup-form').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -533,6 +565,9 @@
                 alert('App ID harus diisi!');
                 return;
             }
+
+            // Save to localStorage
+            saveConfigToLocalStorage();
 
             // Go to login page
             showPage('login');
@@ -648,14 +683,20 @@
                 appConfig = {};
                 userConfig = {};
 
+                // Clear localStorage
+                localStorage.removeItem('qiscus_app_id');
+                localStorage.removeItem('qiscus_channel_id');
+
                 // Clear form inputs
+                document.getElementById('app-id-input').value = '';
+                document.getElementById('channel-id-input').value = '0';
                 document.getElementById('user-id-input').value = '';
                 document.getElementById('display-name-input').value = '';
                 document.getElementById('avatar-url-input').value = '';
 
                 clearLogs();
                 showPage('setup');
-                log('🔄 App reset', 'info');
+                log('🔄 App reset & localStorage cleared', 'info');
             }
         }
 
