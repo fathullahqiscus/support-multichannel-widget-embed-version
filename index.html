@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qiscus Widget - SOLID Refactored Example</title>
+    <title>Qiscus Multichannel Widget - SOLID Architecture Demo</title>
     <!-- 
     ⚠️ DISCLAIMER / PENAFIAN:
     
@@ -17,92 +18,89 @@
     BUKAN tanggung jawab dari sisi Qiscus, dan karena sifatnya open source 
     boleh dimodifikasi semaksimal mungkin.
     -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .demo-section {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        button {
-            background: #55B29A;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        .info {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        code {
-            background: #f5f5f5;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
-    <h1>Qiscus Multichannel Widget - SOLID Refactored</h1>
-    
-    <div class="info" style="background: #fff3cd; border-left: 4px solid #ff9800;">
-        <h3>⚠️ Disclaimer / Penafian</h3>
-        <p><strong>English:</strong><br>
-        This is an <strong>unofficial</strong> open-source project. Any consequences or issues arising from the use of this project are <strong>not the responsibility of Qiscus</strong>. As this is open-source software, you are free to modify it as extensively as you wish.</p>
-        <p><strong>Bahasa Indonesia:</strong><br>
-        Project ini bersifat <strong>unofficial</strong> artinya segala apapun akibat yang akan timbul <strong>bukan tanggung jawab dari sisi Qiscus</strong>, dan karena sifatnya open source boleh dimodifikasi semaksimal mungkin.</p>
-    </div>
-    
-    <div class="info">
-        <h3>Architecture Improvements</h3>
-        <ul>
-            <li><strong>Single Responsibility:</strong> Each service handles one concern</li>
-            <li><strong>Open/Closed:</strong> Easy to extend without modifying existing code</li>
-            <li><strong>Dependency Inversion:</strong> Services are injected, not hardcoded</li>
-            <li><strong>Better Testability:</strong> Services can be mocked and tested independently</li>
-            <li><strong>Maintainability:</strong> Clear separation makes debugging easier</li>
-        </ul>
-    </div>
-
-    <div class="demo-section">
-        <h2>Demo Controls</h2>
-        <button onclick="initWidget()">Initialize Widget</button>
-        <button onclick="startChat()">Start Chat</button>
-        <button onclick="sendTestMessage()">Send Test Message</button>
-        <button onclick="clearSession()">Clear Session</button>
-        <button onclick="showState()">Show State</button>
-    </div>
-
-    <div class="demo-section">
-        <h2>Media Upload</h2>
-        <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx" style="margin: 10px 0;">
-        <button onclick="uploadMedia()">Upload & Send Media</button>
-        <div id="uploadProgress" style="display: none; margin-top: 10px;">
-            <p>Uploading: <span id="uploadFileName"></span></p>
-            <div style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
-                <div id="progressFill" style="height: 100%; background: #55B29A; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <p><span id="progressPercent">0</span>%</p>
+    <div class="page-container">
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🚀 Qiscus Multichannel Widget</h1>
+            <p class="subtitle">SOLID Architecture Demo & Testing Environment</p>
         </div>
-    </div>
 
-    <div class="demo-section">
-        <h2>Event Log</h2>
-        <div id="log" style="background: white; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"></div>
+        <!-- Disclaimer -->
+        <div class="disclaimer-card">
+            <h3>⚠️ Disclaimer / Penafian</h3>
+            <p><strong>English:</strong><br>
+                This is an <strong>unofficial</strong> open-source project. Any consequences or issues arising from the
+                use of this project are <strong>not the responsibility of Qiscus</strong>. As this is open-source
+                software, you are free to modify it as extensively as you wish.</p>
+            <p><strong>Bahasa Indonesia:</strong><br>
+                Project ini bersifat <strong>unofficial</strong> artinya segala apapun akibat yang akan timbul
+                <strong>bukan tanggung jawab dari sisi Qiscus</strong>, dan karena sifatnya open source boleh
+                dimodifikasi semaksimal mungkin.</p>
+        </div>
+
+        <!-- Architecture Info -->
+        <div class="info-card">
+            <h3>✨ Architecture Improvements</h3>
+            <ul>
+                <li><strong>Single Responsibility:</strong> Each service handles one concern</li>
+                <li><strong>Open/Closed:</strong> Easy to extend without modifying existing code</li>
+                <li><strong>Dependency Inversion:</strong> Services are injected, not hardcoded</li>
+                <li><strong>Better Testability:</strong> Services can be mocked and tested independently</li>
+                <li><strong>Maintainability:</strong> Clear separation makes debugging easier</li>
+            </ul>
+        </div>
+
+        <!-- Demo Controls -->
+        <div class="demo-section">
+            <h2>🎮 Demo Controls</h2>
+            <div class="button-grid">
+                <button class="btn" onclick="initWidget()">
+                    <span>🔧</span> Initialize Widget
+                </button>
+                <button class="btn" onclick="startChat()">
+                    <span>💬</span> Start Chat
+                </button>
+                <button class="btn" onclick="sendTestMessage()">
+                    <span>📤</span> Send Test Message
+                </button>
+                <button class="btn btn-secondary" onclick="showState()">
+                    <span>📊</span> Show State
+                </button>
+                <button class="btn btn-danger" onclick="clearSession()">
+                    <span>🗑️</span> Clear Session
+                </button>
+            </div>
+        </div>
+
+        <!-- Media Upload -->
+        <div class="demo-section">
+            <h2>📎 Media Upload</h2>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx">
+            </div>
+            <button class="btn" onclick="uploadMedia()">
+                <span>📤</span> Upload & Send Media
+            </button>
+            <div id="uploadProgress" class="upload-progress" style="display: none;">
+                <p>Uploading: <span id="uploadFileName"></span></p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <p class="progress-percent"><span id="progressPercent">0</span>%</p>
+            </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="demo-section">
+            <h2>📋 Event Log</h2>
+            <div id="log" class="event-log"></div>
+        </div>
     </div>
 
     <!-- Load all service modules -->
@@ -122,8 +120,13 @@
         function log(message, type = 'info') {
             const logDiv = document.getElementById('log');
             const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
-            logDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
+            const logClass = type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : 'log-info';
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${timestamp}]</span><span class="${logClass}">${message}</span>`;
+
+            logDiv.appendChild(entry);
             logDiv.scrollTop = logDiv.scrollHeight;
         }
 
@@ -132,28 +135,28 @@
                 widget = new QiscusMultichannelWidget({
                     appId: 'ramo-29lun8b1ulepsaio', // Replace with your actual App ID
                     channelId: '127590', // Optional
-                    primaryColor: '#55B29A',
+                    primaryColor: '#0ea371',
                     debugMode: true,
                     onReady: (w) => {
-                        log('Widget ready!', 'success');
+                        log('✅ Widget ready!', 'success');
                     },
                     onLoginSuccess: (user) => {
-                        log(`Login success: ${user.username}`, 'success');
+                        log(`✅ Login success: ${user.username}`, 'success');
                     },
                     onLoginError: (error) => {
-                        log(`Login error: ${error.message}`, 'error');
+                        log(`❌ Login error: ${error.message}`, 'error');
                     },
                     onMessageReceived: (message) => {
-                        log(`Message received: ${message.message}`);
+                        log(`📨 Message received: ${message.message}`);
                     },
                     onMessageSent: (message) => {
-                        log(`Message sent: ${message.message}`, 'success');
+                        log(`📤 Message sent: ${message.message}`, 'success');
                     },
                     onRoomChanged: (room) => {
-                        log(`Room changed: ${room}`);
+                        log(`🏠 Room changed: ${room}`);
                     },
                     onTyping: (data) => {
-                        log(`Typing: ${data.typing}`);
+                        log(`⌨️ Typing: ${data.typing}`);
                     }
                 });
 
@@ -170,67 +173,67 @@
                 // Setup media event listeners
                 setupMediaEvents();
 
-                log('Widget initialized successfully', 'success');
+                log('✅ Widget initialized successfully', 'success');
             } catch (error) {
-                log(`Initialization error: ${error.message}`, 'error');
+                log(`❌ Initialization error: ${error.message}`, 'error');
             }
         }
 
         function startChat() {
             if (!widget) {
-                log('Please initialize widget first', 'error');
+                log('❌ Please initialize widget first', 'error');
                 return;
             }
 
             widget.initiateChat()
                 .then(() => {
-                    log('Chat initiated successfully', 'success');
+                    log('✅ Chat initiated successfully', 'success');
                 })
                 .catch(error => {
-                    log(`Chat initiation error: ${error.message}`, 'error');
+                    log(`❌ Chat initiation error: ${error.message}`, 'error');
                 });
         }
 
         function sendTestMessage() {
             if (!widget) {
-                log('Please initialize widget first', 'error');
+                log('❌ Please initialize widget first', 'error');
                 return;
             }
 
-            widget.sendMessage('Hello from SOLID refactored widget!')
+            widget.sendMessage('Hello from SOLID refactored widget! 👋')
                 .then(() => {
-                    log('Test message sent', 'success');
+                    log('✅ Test message sent', 'success');
                 })
                 .catch(error => {
-                    log(`Send message error: ${error.message}`, 'error');
+                    log(`❌ Send message error: ${error.message}`, 'error');
                 });
         }
 
         function clearSession() {
             if (!widget) {
-                log('Please initialize widget first', 'error');
+                log('❌ Please initialize widget first', 'error');
                 return;
             }
 
             widget.clearUser();
-            log('Session cleared', 'success');
+            log('🗑️ Session cleared', 'success');
         }
 
         function showState() {
             if (!widget) {
-                log('Please initialize widget first', 'error');
+                log('❌ Please initialize widget first', 'error');
                 return;
             }
 
             const state = widget.getState();
             console.log('Current State:', state);
-            log('State logged to console (F12)', 'success');
+            log('📊 State logged to console (F12)', 'success');
         }
 
         // Media upload function
         async function uploadMedia() {
             if (!widget) {
-                log('Please initialize widget first', 'error');
+                log('❌ Please initialize widget first', 'error');
                 return;
             }
 
@@ -238,13 +241,13 @@
             const file = fileInput.files[0];
 
             if (!file) {
-                log('Please select a file first', 'error');
+                log('❌ Please select a file first', 'error');
                 return;
             }
 
             const roomId = widget.stateManager.get('roomId');
             if (!roomId) {
-                log('No active room. Please start chat first.', 'error');
+                log('❌ No active room. Please start chat first.', 'error');
                 return;
             }
 
@@ -281,28 +284,29 @@
                 progressFill.style.width = data.percent + '%';
                 progressPercent.textContent = data.percent;
 
-                log(`Upload progress: ${data.percent}%`, 'info');
+                log(`⏳ Upload progress: ${data.percent}%`, 'info');
             });
 
             // Listen for upload complete
             widget.eventEmitter.on('media:uploaded', (data) => {
                 const progressDiv = document.getElementById('uploadProgress');
                 progressDiv.style.display = 'none';
-                log('Media uploaded successfully!', data);
+                log('✅ Media uploaded successfully!', 'success');
             });
 
             // Listen for upload error
             widget.eventEmitter.on('media:error', (data) => {
                 const progressDiv = document.getElementById('uploadProgress');
                 progressDiv.style.display = 'none';
-                log(`Media upload failed: ${data.error.message}`, 'error');
+                log(`❌ Media upload failed: ${data.error.message}`, 'error');
             });
         }
 
         // Auto-initialize on page load
         window.addEventListener('load', () => {
-            log('Page loaded. Click "Initialize Widget" to start.');
+            log('🎉 Page loaded. Click "Initialize Widget" to start.');
         });
     </script>
 </body>
+
 </html>
