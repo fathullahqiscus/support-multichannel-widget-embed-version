@@ -21,7 +21,7 @@ class UIService {
 
     getWidgetHTML() {
         return `
-            <div class="qiscus-chat-button" id="qiscus-chat-button">
+            <div class="qiscus-chat-button hidden" id="qiscus-chat-button">
                 <img src="https://cdn-icons-png.flaticon.com/128/1041/1041916.png" alt="Chat" width="28" height="28" />
                 <span class="qiscus-unread-badge" id="qiscus-unread-badge">0</span>
             </div>
@@ -107,6 +107,7 @@ class UIService {
             }
             
             .qiscus-chat-button:hover { transform: scale(1.1); }
+            .qiscus-chat-button.hidden { display: none !important; }
             
             .qiscus-unread-badge {
                 position: absolute;
@@ -468,12 +469,12 @@ class UIService {
             // Check if message is from customer (current user) using user_extras
             const isCustomer = msg.user_extras?.is_customer === true;
             const isOwn = isCustomer;
-            
-            const time = new Date(msg.timestamp).toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+
+            const time = new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
+
             const senderName = isOwn ? 'You' : (msg.username || 'Customer Service');
 
             // Check if message is a media message
@@ -539,10 +540,10 @@ class UIService {
         if (message.type !== 'custom' && message.type !== 'file_attachment' || !message.payload) return null;
 
         try {
-            const payload = typeof message.payload === 'string' 
-                ? JSON.parse(message.payload) 
+            const payload = typeof message.payload === 'string'
+                ? JSON.parse(message.payload)
                 : message.payload;
-            
+
             // Handle both custom type (with content wrapper) and file_attachment type (direct payload)
             const content = payload.content || payload;
 
@@ -582,7 +583,7 @@ class UIService {
             } else {
                 const fileSize = content.size ? this.formatFileSize(content.size) : 'File';
                 const fileIcon = this.getFileIcon(fileName);
-                
+
                 return `
                     <div class="qiscus-message-bubble">
                         <div class="media-message">
@@ -610,12 +611,12 @@ class UIService {
      */
     getFileTypeFromExtension(filename) {
         if (!filename) return 'file';
-        
+
         const ext = filename.split('.').pop().toLowerCase();
-        
+
         const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
         const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv'];
-        
+
         if (imageExts.includes(ext)) return 'image';
         if (videoExts.includes(ext)) return 'video';
         return 'file';
@@ -626,12 +627,12 @@ class UIService {
      */
     getFileIcon(filename) {
         if (!filename) return '📎';
-        
+
         const ext = filename.split('.').pop().toLowerCase();
         const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
         const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
         const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
-        
+
         if (imageExts.includes(ext)) return '🖼️';
         if (videoExts.includes(ext)) return '🎥';
         if (docExts.includes(ext)) return '📄';
@@ -679,6 +680,26 @@ class UIService {
         const fileInput = document.getElementById('qiscus-file-input');
         if (fileInput) {
             fileInput.value = '';
+        }
+    }
+
+    /**
+     * Show chat button (FAB)
+     */
+    showChatButton() {
+        const chatButton = document.getElementById('qiscus-chat-button');
+        if (chatButton) {
+            chatButton.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Hide chat button (FAB)
+     */
+    hideChatButton() {
+        const chatButton = document.getElementById('qiscus-chat-button');
+        if (chatButton) {
+            chatButton.classList.add('hidden');
         }
     }
 }

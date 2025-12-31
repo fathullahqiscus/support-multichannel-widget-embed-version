@@ -437,10 +437,6 @@
                         <span class="config-label">Email</span>
                         <span class="config-value" id="user-email">-</span>
                     </div>
-                    <div class="config-item">
-                        <span class="config-label">Token</span>
-                        <span class="config-value" id="user-token">-</span>
-                    </div>
                 </div>
             </div>
 
@@ -521,6 +517,7 @@
         let widget;
         let appConfig = {};
         let userConfig = {};
+        let isSDKSetup = false; // Flag to prevent double setup
 
         // Load saved config on page load
         window.addEventListener('load', function () {
@@ -559,34 +556,51 @@
         }
 
         async function setupQiscusSDK() {
+            // Prevent double setup
+            if (isSDKSetup && widget) {
+                log('⚠️ SDK already setup, skipping...', 'info');
+                return true;
+            }
+
             try {
                 log('🔄 Setting up Qiscus SDK...', 'info');
 
-                // Create temporary widget just for SDK setup
-                const tempWidget = new QiscusMultichannelWidget({
+                // Create widget - constructor will automatically load and initialize SDK
+                widget = new QiscusMultichannelWidget({
                     appId: appConfig.appId,
                     channelId: appConfig.channelId || undefined,
                     primaryColor: '#3b82f6',
                     debugMode: true,
-                    onReady: () => {
+                    onReady: (w) => {
                         log('✅ Qiscus SDK setup complete!', 'success');
+                        isSDKSetup = true; // Mark as setup when ready
+                    },
+                    onLoginSuccess: (user) => {
+                        log(`✅ Login success: ${user.username}`, 'success');
+                        refreshConfig();
+                    },
+                    onLoginError: (error) => {
+                        log(`❌ Login error: ${error.message}`, 'error');
+                        refreshConfig();
+                    },
+                    onMessageReceived: (message) => {
+                        log(`📨 Message received`, 'info');
+                        refreshConfig();
+                    },
+                    onMessageSent: (message) => {
+                        log(`📤 Message sent`, 'success');
+                        refreshConfig();
                     }
                 });
 
-                // Load and initialize SDK
-                await tempWidget.sdkService.loadSDK();
-                log('✅ SDK loaded successfully', 'success');
-
-                await tempWidget.sdkService.initialize(appConfig.appId);
-                log('✅ SDK initialized with App ID: ' + appConfig.appId, 'success');
-
-                // Store for later use
-                widget = tempWidget;
+                // Widget constructor handles SDK loading and initialization automatically
+                log('✅ Widget created, SDK will initialize automatically', 'success');
 
                 return true;
             } catch (error) {
                 log('❌ SDK setup error: ' + error.message, 'error');
                 alert('Gagal setup Qiscus SDK. Periksa App ID Anda!');
+                isSDKSetup = false;
                 return false;
             }
         }
@@ -679,6 +693,13 @@
                 widget.initiateChat()
                     .then(() => {
                         log('✅ Chat initiated successfully', 'success');
+                        log('✅ Login to multichannel API successful!', 'success');
+
+                        // Show FAB chat button (without opening the window)
+                        widget.uiService.showChatButton();
+                        log('✅ FAB chat button displayed', 'success');
+
+                        // Go to main monitoring page
                         showPage('main');
                         refreshConfig();
 
@@ -710,6 +731,7 @@
                 widget = null;
                 appConfig = {};
                 userConfig = {};
+                isSDKSetup = false; // Reset SDK setup flag
 
                 // Clear localStorage
                 localStorage.removeItem('qiscus_app_id');
@@ -779,12 +801,6 @@
             document.getElementById('user-name').textContent = user?.username || user?.name || '-';
             document.getElementById('user-email').textContent = user?.email || '-';
 
-            const token = widget.sdkService?.getUserToken();
-            if (token) {
-                document.getElementById('user-token').textContent = token.substring(0, 20) + '...';
-            } else {
-                document.getElementById('user-token').textContent = '-';
-            }
         }
 
         function updateRoomInfo() {
