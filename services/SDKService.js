@@ -17,7 +17,7 @@ class SDKService {
 
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/qiscus-sdk-core';
+            script.src = 'https://unpkg.com/qiscus-sdk-core@2.14.2';
             script.onload = () => {
                 this.logger.log('[SDKService] SDK loaded');
                 resolve();
